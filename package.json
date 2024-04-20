@@ -1,0 +1,37 @@
+{
+  "name": "derive-rust",
+  "version": "0.0.1",
+  "description": "javascript utilities inspired by the Rust programming language and its standard library",
+  "scripts": {
+    "start": "node --watch build/lib.js",
+    "check": "esbuild src/lib.ts --bundle --outdir=build --watch",
+    "build": "vite build",
+    "test": ""
+  },
+  "types": "./build/index.d.ts",
+  "main": "./build/lib.umd.cjs",
+  "module": "./build/lib.js",
+  "files": [ "./build/", "./LICENSE"],
+  "exports": {
+    ".": {
+      "import": "./build/lib.js",
+      "require": "./build/lib.umd.cjs"
+    }
+  },
+  "keywords": [
+    "rust",
+    "result",
+    "monad",
+    "match",
+    "utilities"
+  ],
+  "author": "Seacrest",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.20.2",
+    "vite": "^5.2.10"
+  },
+  "dependencies": {
+    "vite-plugin-dts": "^3.8.3"
+  }
+}
