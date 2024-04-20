@@ -29,9 +29,7 @@
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.20.2",
-    "vite": "^5.2.10"
-  },
-  "dependencies": {
+    "vite": "^5.2.10",
     "vite-plugin-dts": "^3.8.3"
   }
 }
