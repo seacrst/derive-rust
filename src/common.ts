@@ -15,7 +15,7 @@ export function nothing(): Nothing {
 
 export type Self<S, T = void> = (self: S) => T;
 
-export function ref<T, R>(fn: (r: R) => T, self: Sized<R>): T {
+export function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T {
   return fn(self.$ref[0]);
 }
 
@@ -32,5 +32,5 @@ export function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<
 }
 
 export function getRef<T>(s: Sized<T>): T {
-  return ref(r => r, s);
+  return ref(s, r => r);
 }

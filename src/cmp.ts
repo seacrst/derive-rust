@@ -1,7 +1,7 @@
 export function cmp<T>(lhsValue: T, rhsValue: T): 1 | 0 | -1 {
 
   if (typeof lhsValue === "function" && typeof rhsValue === "function") {
-    return (lhsValue as Function).name.length > 0 && (rhsValue as Function).name.length > 0 ? (lhsValue as Function).name === (rhsValue as Function).name ? 1 : -1 : 0
+    return 0;
   }
   
   if (typeof lhsValue === "object" && typeof rhsValue === "object") {
@@ -35,8 +35,8 @@ export function cmp<T>(lhsValue: T, rhsValue: T): 1 | 0 | -1 {
               return -1;
             }
 
-            const lhsEnt = Object.entries(lhsValue!);
-            const rhsEnt = Object.entries(rhsValue!);
+            const lhsEnt = Object.entries(lhsValue!).filter(([k, v]) => typeof k !== "function" || typeof v !== "function");
+            const rhsEnt = Object.entries(rhsValue!).filter(([k, v]) => typeof k !== "function" || typeof v !== "function");
 
             if (lhsEnt.length === rhsEnt.length) {
               const r = lhsEnt.reduce((tot, [k, v], i) => tot + (rhsEnt[i][0] === k && cmp(v, rhsEnt[i][1]) === 1 ? 1 : -1), 0);

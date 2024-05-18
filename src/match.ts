@@ -1,9 +1,10 @@
 import { cmp } from "./cmp";
-import { panic } from "./common";
+import { panic, ref } from "./common";
+import { None, Some } from "./option";
 
 export function match<V, T>(value: V, matchArms: (value: V) => Array<[V | (() => V[]), () => T]>, defaultMatchArm: (value: V) => T): T {
   if (typeof value === "function") {
-    panic("matched value must not be Function");
+    return defaultMatchArm(value);
   }
 
   const found = matchArms(value)
