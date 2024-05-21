@@ -1,17 +1,18 @@
 import { cmp } from "./cmp";
-import { Sized, panic, ref } from "./core";
-import { None, Some } from "./option";
+import { Sized, ex, panic, ref } from "./core";
+import { None, Some, Option } from "./option";
+import { Err, Ok, Result } from "./result";
 
 export type Extract<V> = V extends Sized<infer T> ? T : V;
 export type MatchArm<V, T> = [...V[], () => T];
 export type MatchArmFn<V, T> = (p: Extract<V>) => MatchArm<V, T>;
 
-export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>> , defaultMatchArm: (value: V) => T): T {
-  if (typeof value === "function") {
-    return defaultMatchArm(value);
-  }
-
+export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>> , defaultMatchArm: (value: V, p: Extract<V>) => T): T {
   const param = value instanceof Object && Object.hasOwn(value, "$ref") ? (value as unknown as Sized<V>).$ref[0] : value;
+
+  if (typeof value === "function") {
+    return defaultMatchArm(value, param as Extract<V>);
+  }
   
   const arms = matchArms(value)
     .map(arm => typeof arm === "function" ? (function() {
@@ -43,7 +44,14 @@ export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V,
     return found[1]();
   }
 
-  return defaultMatchArm(value);
+  return defaultMatchArm(value, param as Extract<V>);
+}
+
+export function ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr: (v: Extract<V>) => void = () => {}) {
+  const param = value instanceof Object && Object.hasOwn(value, "$ref") ? (value as unknown as Sized<V>).$ref[0] : value;
+  const lhs = p(param as Extract<V>);
+
+  matchExpr(value, lhs, (result) => result === 1) ? ifExpr(param as Extract<V>) : elseExpr(param as Extract<V>);
 }
 
 export function matchExpr<T, R>(lhsValue: T, rhsValue: T, exec: (result: 1 | 0 | -1, lhs: T, rhs: T) => R): R {

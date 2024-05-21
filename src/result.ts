@@ -14,16 +14,16 @@ export class Result<T, E> implements Sized<T | E> {
   constructor(impl: (self: ResultSelf<T, E>) => T | E) {
     const result = impl({
       err(error: E) {
-        return error;
+        return error ?? {err: undefined} as E;
       },
       ok(value: T) {
-        return value;
+        return value ?? {ok: null} as T;
       }
     });
 
     this.$ref = [result];
-    this.ok = result as T || null as T;
-    this.err = result as E || null as E;
+    this.ok = result as T;
+    this.err = result as E;
   }
 
   expect(message: string): T {

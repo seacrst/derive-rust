@@ -6,7 +6,7 @@ export default defineConfig({
     outDir: "build",
     lib: {
       entry: [
-        "src/common.ts",
+        "src/core.ts",
         "src/lib.ts"
       ],
       name: "derive-rust",

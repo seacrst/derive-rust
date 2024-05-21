@@ -13,7 +13,7 @@ export class Option<T> implements Sized<T> {
   constructor(impl: (self: OptionSelf<T>) => T | undefined) {
     const option = impl({
       some(value: T): T {
-        return value;
+        return value ?? null as T;
       },
       none(): undefined {
         return undefined;
@@ -21,7 +21,7 @@ export class Option<T> implements Sized<T> {
     });
     
     this.$ref = [option] as [T];
-    this.some = option as T || null as T;
+    this.some = option as T;
     this.none = option as undefined;
   }
   
