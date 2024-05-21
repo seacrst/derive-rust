@@ -1,6 +1,9 @@
 import { Sized, panic } from "./common";
 
-type ResultSelf<T, E> =  {ok: (value: T) => T, err: (value: E) => E};
+interface ResultSelf<T, E> {
+  ok: (value: T) => T;
+  err: (value: E) => E;
+};
 
 export class Result<T, E> implements Sized<T | E> {
   readonly $ref: [T | E];
@@ -20,6 +23,10 @@ export class Result<T, E> implements Sized<T | E> {
     this.$ref = [result];
     this.ok = result as T || null as T;
     this.err = result as E || null as E;
+  }
+
+  expect(message: string): T {
+    return this.isOk() ? this.ok : panic(message);
   }
 
   unwrap(): T {
