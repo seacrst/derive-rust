@@ -1,4 +1,4 @@
-import { Sized, nothing, setNoncallableRef, unit } from "./core";
+import { Sized, nothing, range, rangeInc, rangeChars, setNoncallableRef, unit, rangeCharsInc, rangeCharsRev, rangeCharsRevInc } from "./core";
 import { match } from "./match";
 
 export * from "./cmp";
