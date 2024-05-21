@@ -1,4 +1,4 @@
-import { Sized, panic } from "./common";
+import { Sized, panic } from "./core";
 
 type OptionSelf<T> = {
   some: (value: T) => T, 
@@ -25,16 +25,12 @@ export class Option<T> implements Sized<T> {
     this.none = option as undefined;
   }
   
-  unwrap() {
-    if (this.isSome()) {
-      return this.some;
-    } else {
-      panic("None");
-    }
+  unwrap(): T {
+    return this.isSome() ? this.some : panic("None");
   }
   
-  expect(message: string) {
-    panic(message);
+  expect(message: string): T {
+    return this.isSome() ? this.some : panic(message);
   }
   
   unwrapOr(value: T): T {

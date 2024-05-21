@@ -1,4 +1,5 @@
-import { Sized, panic } from "./common";
+import { Sized, panic } from "./core";
+import {None, Option, Some} from "./option";
 
 interface ResultSelf<T, E> {
   ok: (value: T) => T;
@@ -30,11 +31,7 @@ export class Result<T, E> implements Sized<T | E> {
   }
 
   unwrap(): T {
-    if (this.isOk()) {
-      return this.ok;
-    } else {
-      panic(`Err(${this.err})`)
-    }
+    return this.isOk() ? this.ok : panic(`Err(${JSON.stringify(this.err)})`);
   }
 
   unwrapOr(value: T): T {
@@ -49,7 +46,7 @@ export class Result<T, E> implements Sized<T | E> {
     if (this.isErr()) {
       return this.err;
     } else {
-      panic(`Ok(${this.ok})`);
+      panic(`Ok(${JSON.stringify(this.ok)})`);
     }
   }
 
@@ -59,6 +56,10 @@ export class Result<T, E> implements Sized<T | E> {
 
   isErr() {
     return this.err !== null;
+  }
+
+  intoOption(): Option<T> {
+    return this.isOk() ? Some(this.ok) : None<T>();
   }
 
   static Ok<T, E = unknown>(value: T): Result<T, E> {

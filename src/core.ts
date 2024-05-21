@@ -2,15 +2,19 @@ export interface Sized<T = null> {
   readonly $ref: [T];
 }
 
-export type Nothing = "_";
-export type Unit = "()";
+export type Nothing = {};
+export type Unit = {};
 
 export function unit(): Unit {
-  return "()";
+  return (function () {
+    return "()";
+  })() as Unit;
 }
 
 export function nothing(): Nothing {
-  return "_";
+  return (function() {
+    return "Nothing";
+  })() as Nothing
 }
 
 export type Self<S, T = void> = (self: S) => T;
@@ -35,10 +39,7 @@ export function getRef<T>(s: Sized<T>): T {
   return ref(s, r => r);
 }
 
-export interface Vec<T> {
-  values: T[]
-}
-
-export function vec<T>(v: Vec<T>): Vec<T> {
-  return v;
+export function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T> {
+  self.$ref[0] = typeof value === "function" ? value.name as T : value as T;
+  return self;
 }

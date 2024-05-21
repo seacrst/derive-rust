@@ -1,5 +1,5 @@
 import { cmp } from "./cmp";
-import { Sized, panic, ref } from "./common";
+import { Sized, panic, ref } from "./core";
 import { None, Some } from "./option";
 
 export type Extract<V> = V extends Sized<infer T> ? T : V;
