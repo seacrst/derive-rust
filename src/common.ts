@@ -34,3 +34,11 @@ export function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<
 export function getRef<T>(s: Sized<T>): T {
   return ref(s, r => r);
 }
+
+export interface Vec<T> {
+  values: T[]
+}
+
+export function vec<T>(v: Vec<T>): Vec<T> {
+  return v;
+}
