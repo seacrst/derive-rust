@@ -1,57 +1,63 @@
 import { Sized, panic } from "./core";
-
-type OptionSelf<T> = {
-  some: (value: T) => T, 
-  none: () => undefined
-};
+import { match } from "./match";
+import { Err, Ok, Result } from "./result";
 
 export class Option<T> implements Sized<T> {
-  $ref: [T];
-  some: T;
-  none = undefined;
-  
-  constructor(impl: (self: OptionSelf<T>) => T | undefined) {
-    const option = impl({
-      some(value: T): T {
-        return value ?? null as T;
-      },
-      none(): undefined {
-        return undefined;
-      }
-    });
-    
-    this.$ref = [option] as [T];
-    this.some = option as T;
-    this.none = option as undefined;
+  $ref: [T] = [Option.name] as [T];
+  $option: [string, T] = ["", undefined as T];
+
+  some(value: T): Option<T> {
+    return this.#variant(value, this.some);
   }
-  
+
+  none(): Option<T> {
+    return this.#variant(undefined as T, this.none);
+  }
+
+  #variant(value: T, fn: Function): Option<T> {
+    this.$ref[0] = value;
+    this.$option = [fn.name, value];
+    return this;
+  }
+ 
   unwrap(): T {
-    return this.isSome() ? this.some : panic("None");
+    return this.isSome() ? this.$option[1] : panic("None");
   }
   
   expect(message: string): T {
-    return this.isSome() ? this.some : panic(message);
+    return this.isSome() ? this.$option[1] : panic(message);
   }
   
   unwrapOr(value: T): T {
-    return this.isSome() ?
-    this.some : value;
+    return this.isSome() ? this.$option[1] : value;
   }
   
-  isNone() {
-    return this.some === null;
+  isNone(): boolean {
+    return match<Option<T>, boolean>(this, () => [
+      [None<T>(), () => true]   
+    ], () => false);
   }
   
-  isSome() {
-    return !this.isNone();
+  isSome(): boolean {
+    return match<Option<T>, boolean>(this, (v) => [
+      [Some(v.$ref[0]), () => true]   
+    ], () => false);
+  }
+
+  intoResult<E>(error: E): Result<T, E> {
+    return this.isSome() ? Ok(this.$option[1] as unknown as T) : Err<E, T>(error);
+  }
+
+  static from<T>(value: T): Option<T> {
+    return value === null || value === undefined ? None<T>() : Some(value);
   }
 
   static None<T = unknown>(): Option<T> {
-    return new Option<T>(({none}) => none());
+    return new Option<T>().none();
   }
 
-  static Some<T = unknown>(value: T): Option<T> {
-    return new Option<T>(({some}) => some(value));
+  static Some<T>(value: T): Option<T> {
+    return new Option<T>().some(value);
   }
 
 }

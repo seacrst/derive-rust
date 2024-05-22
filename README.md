@@ -71,33 +71,38 @@ const en = match(new MyEnum().Bar(), () => [
 
 ```ts
 class Option<T> implements Sized<T> {
+    #private;
     $ref: [T];
-    some: T;
-    none: undefined;
-    constructor(impl: (self: OptionSelf<T>) => T | undefined);
+    $option: [string, T];
+    some(value: T): Option<T>;
+    none(): Option<T>;
     unwrap(): T;
     expect(message: string): T;
     unwrapOr(value: T): T;
     isNone(): boolean;
     isSome(): boolean;
+    intoResult<E>(error: E): Result<T, E>;
+    static from<T>(value: T): Option<T>;
     static None<T = unknown>(): Option<T>;
-    static Some<T = unknown>(value: T): Option<T>;
+    static Some<T>(value: T): Option<T>;
 }
 
 class Result<T, E> implements Sized<T | E> {
-    readonly $ref: [T | E];
-    private ok;
-    private err;
-    constructor(impl: (self: ResultSelf<T, E>) => T | E);
+    #private;
+    $ref: [T | E];
+    $result: [string, T | E];
+    ok(value: T): Result<T, E>;
+    err(value: E): Result<T, E>;
+    isOk(): boolean;
+    isErr(): boolean;
     expect(message: string): T;
     unwrap(): T;
     unwrapOr(value: T): T;
     unwrapErr(): E;
-    isOk(): boolean;
-    isErr(): boolean;
     intoOption(): Option<T>;
-    static Ok<T, E = unknown>(value: T): Result<T, E>;
-    static Err<E, T = unknown>(value: E): Result<T, E>;
+    static from<T, E>(value: T | E): Result<T, E>;
+    static Ok<T, E>(value: T): Result<T, E>;
+    static Err<E, T>(value: E): Result<T, E>;
 }
 
 match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
@@ -106,17 +111,25 @@ ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, els
 
 type Self<S, T = void> = (self: S) => T;
 
-ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
-panic(reason: string): never;
-ex<T, V>(fn: (value: V) => T, value?: V): T;
-dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
-getRef<T>(s: Sized<T>): T;
-setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
-setRef<T>(self: Sized<T>, value: T): Sized<T>;
-range(start: number, end: number): number[];
-rangeInc(start: number, end: number): number[];
-rangeChars(start: string, end: string, str: string): string;
-rangeCharsInc(start: string, end: string, str: string): string;
-rangeCharsRev<T>(start: string, end: string, str: string): string;
-rangeCharsRevInc<T>(start: string, end: string, str: string): string;
+interface Sized<T = null> {
+    readonly $ref: [T];
+}
+type Nothing = {};
+type Unit = {};
+type Self<S, T = void> = (self: S) => T;
+function unit(): Unit;
+function nothing(): Nothing;
+function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
+function panic(reason: string): never;
+function ex<T, V>(fn: (value: V) => T, value?: V): T;
+function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
+function getRef<T>(s: Sized<T>): T;
+function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
+function setRef<T>(self: Sized<T>, value: T): Sized<T>;
+function range(start: number, end: number): number[];
+function rangeInc(start: number, end: number): number[];
+function rangeChars(start: string, end: string, str: string): string;
+function rangeCharsInc(start: string, end: string, str: string): string;
+function rangeCharsRev(start: string, end: string, str: string): string;
+function rangeCharsRevInc(start: string, end: string, str: string): string;
 ```

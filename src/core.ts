@@ -78,10 +78,10 @@ export function rangeCharsInc(start: string, end: string, str: string): string {
   return rangeChars(start, str.at(str.indexOf(end) + 1) || end, str);
 }
 
-export function rangeCharsRev<T>(start: string, end: string, str: string): string {
+export function rangeCharsRev(start: string, end: string, str: string): string {
   return Array.from(rangeChars(str.at(str.indexOf(start) + 1) || start, str.at(str.indexOf(end) + 1) || end, str)).reverse().join("")
 }
 
-export function rangeCharsRevInc<T>(start: string, end: string, str: string): string {
+export function rangeCharsRevInc(start: string, end: string, str: string): string {
   return Array.from(rangeChars(start, str.at(str.indexOf(end) + 1) || end, str)).reverse().join("")
 }
