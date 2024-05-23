@@ -1,6 +1,6 @@
 {
   "name": "derive-rust",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "javascript utilities inspired by the Rust programming language and its standard library",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
@@ -25,9 +25,15 @@
   "keywords": [
     "rust",
     "result",
-    "monad",
+    "option",
+    "enum",
+    "variant",
     "match",
-    "utilities"
+    "utilities",
+    "range",
+    "derive",
+    "clone",
+    "compare"
   ],
   "author": "Seacrest",
   "license": "MIT",
