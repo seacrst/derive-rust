@@ -86,7 +86,7 @@ export function rangeCharsRevInc(start: string, end: string, str: string): strin
   return rangeChars(start, str.at(str.indexOf(end) + 1) || end, str).reverse()
 }
 
-function clone<T>(value: T): T {
+export function clone<T>(value: T): T {
   
   if (value !== null && typeof value !== "object") {
     return value;

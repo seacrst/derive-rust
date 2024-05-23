@@ -114,9 +114,9 @@ type Self<S, T = void> = (self: S) => T;
 interface Sized<T = null> {
     readonly $ref: [T];
 }
+type Self<S, T = void> = (self: S) => T;
 type Nothing = {};
 type Unit = {};
-type Self<S, T = void> = (self: S) => T;
 function unit(): Unit;
 function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
@@ -128,8 +128,9 @@ function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
 function setRef<T>(self: Sized<T>, value: T): Sized<T>;
 function range(start: number, end: number): number[];
 function rangeInc(start: number, end: number): number[];
-function rangeChars(start: string, end: string, str: string): string;
-function rangeCharsInc(start: string, end: string, str: string): string;
-function rangeCharsRev(start: string, end: string, str: string): string;
-function rangeCharsRevInc(start: string, end: string, str: string): string;
+function rangeChars(start: string, end: string, str: string): string[];
+function rangeCharsInc(start: string, end: string, str: string): string[];
+function rangeCharsRev(start: string, end: string, str: string): string[];
+function rangeCharsRevInc(start: string, end: string, str: string): string[];
+function clone<T>(value: T): T;
 ```
