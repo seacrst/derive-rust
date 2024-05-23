@@ -70,18 +70,42 @@ export function rangeInc(start: number, end: number): number[] {
   return range(start, start < end ? end + 1 : end - 1);
 }
 
-export function rangeChars(start: string, end: string, str: string): string {
-  return start.length > 0 && end.length > 0 ? str.slice(str.indexOf(start), str.indexOf(end)) : start;
+export function rangeChars(start: string, end: string, str: string): string[] {
+  return start.length > 0 && end.length > 0 ? Array.from(str.slice(str.indexOf(start), str.indexOf(end))) : Array.from(start);
 }
 
-export function rangeCharsInc(start: string, end: string, str: string): string {
+export function rangeCharsInc(start: string, end: string, str: string): string[] {
   return rangeChars(start, str.at(str.indexOf(end) + 1) || end, str);
 }
 
-export function rangeCharsRev(start: string, end: string, str: string): string {
-  return Array.from(rangeChars(str.at(str.indexOf(start) + 1) || start, str.at(str.indexOf(end) + 1) || end, str)).reverse().join("")
+export function rangeCharsRev(start: string, end: string, str: string): string[] {
+  return rangeChars(str.at(str.indexOf(start) + 1) || start, str.at(str.indexOf(end) + 1) || end, str).reverse();
 }
 
-export function rangeCharsRevInc(start: string, end: string, str: string): string {
-  return Array.from(rangeChars(start, str.at(str.indexOf(end) + 1) || end, str)).reverse().join("")
+export function rangeCharsRevInc(start: string, end: string, str: string): string[] {
+  return rangeChars(start, str.at(str.indexOf(end) + 1) || end, str).reverse()
+}
+
+function clone<T>(value: T): T {
+  
+  if (value !== null && typeof value !== "object") {
+    return value;
+  }
+  
+  if (typeof value !== "function" && !(value instanceof Array)) {
+    return {
+      ...Object.fromEntries(Object.entries(value!)
+        .filter(([_, val]) => typeof val !== "function")
+        .map(([key, val]) => [key, clone(val)])),
+      ...Object.fromEntries(Object.entries(value!)
+        .filter(([_, val]) => typeof val === "function"))
+    } as T
+  }
+
+  if (value instanceof Array) {
+    return value.map(v => clone(v)) as T
+  }
+
+
+  return structuredClone(value);
 }
