@@ -48,10 +48,11 @@ console.log(s3) // "baz or bar"
 
 class MyEnum<T = string> implements Sized<T> {
   $ref: [T] = [MyEnum.name] as [T];
-  variant: [string, T] = ["", undefined as T]; // must be public 
+  variant: [string, T] = ["", undefined as T]; // must be public for cmp() function
 
   #variant(value: T | Function | string): MyEnum<T> {
-    setNoncallableRef(this, value) as MyEnum<T>
+    setNoncallableRef(this, value) as MyEnum<T> // or this.$ref[0] = value;
+    this.$variant = [fn.name, value]; // you don't want to store null or undefined which value might be then pass [fn.name, value ?? fn.name]  
     Object.freeze(this.$ref);
     Object.freeze(this.variant);
 

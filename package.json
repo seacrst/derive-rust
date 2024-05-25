@@ -1,12 +1,13 @@
 {
   "name": "derive-rust",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "javascript utilities inspired by the Rust programming language and its standard library",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
     "watch": "node --watch build/lib.js",
     "check": "esbuild src/lib.ts --bundle --outdir=build --watch",
     "build": "vite build",
+    "publish": "npm run build && npm publish",
     "test": ""
   },
   "types": "./build/index.d.ts",
