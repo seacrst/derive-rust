@@ -9,8 +9,8 @@ export class Result<T, E> implements Sized<T | E> {
   #variant(value: T | E, fn: Function): Result<T, E> {
     this.$ref[0] = value;
     this.$result = [fn.name, value];
-    Object.freeze(this.$ref);
-    Object.freeze(this.$result);
+    Object.freeze(this);
+    
     return this;
   }
 

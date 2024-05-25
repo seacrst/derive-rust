@@ -52,9 +52,8 @@ class MyEnum<T = string> implements Sized<T> {
 
   #variant(value: T | Function | string): MyEnum<T> {
     setNoncallableRef(this, value) as MyEnum<T> // or this.$ref[0] = value;
-    this.$variant = [fn.name, value]; // you don't want to store null or undefined which value might be then pass [fn.name, value ?? fn.name]  
-    Object.freeze(this.$ref);
-    Object.freeze(this.variant);
+    this.$variant = [fn.name, value]; // if you don't want to store null or undefined which value might be then pass [fn.name, value ?? fn.name]  
+    Object.freeze(this);
 
     return this; 
   }

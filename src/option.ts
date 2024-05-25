@@ -17,9 +17,8 @@ export class Option<T> implements Sized<T> {
   #variant(value: T, fn: Function): Option<T> {
     this.$ref[0] = value;
     this.$option = [fn.name, value];
-    Object.freeze(this.$option);
-    Object.freeze(this.$ref);
-    
+    Object.freeze(this);
+
     return this;
   }
  
