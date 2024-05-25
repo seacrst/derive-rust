@@ -1,7 +1,5 @@
 import { cmp } from "./cmp";
-import { Sized, ex, panic, ref } from "./core";
-import { None, Some, Option } from "./option";
-import { Err, Ok, Result } from "./result";
+import { Sized, ex } from "./core";
 
 export type Extract<V> = V extends Sized<infer T> ? T : V;
 export type MatchArm<V, T> = [...V[], () => T];
@@ -15,17 +13,17 @@ export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V,
   }
   
   const arms = matchArms(value)
-    .map(arm => typeof arm === "function" ? (function() {
-      const a = arm(param as Extract<V>);
+    .map(arm => typeof arm === "function" ? ex(() => {
+        const a = arm(param as Extract<V>);
 
-      if (a.length === 2) {
-        return [a];
-      }
+        if (a.length === 2) {
+            return [a];
+        }
 
-      const expr = a.pop() as () => T;
+        const expr = a.pop() as () => T;
 
-      return a.map(v => [v, expr]) as [...V[], () => T]
-    })() : (function() {
+        return a.map(v => [v, expr]) as [...V[], () => T]
+    }) : ex(() => {
 
       if (arm.length === 2) {
         return [arm];
@@ -34,7 +32,7 @@ export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V,
       const expr = arm.pop() as () => T;
 
       return arm.map(v => [v, expr]);
-    })()
+    })
   )
   .flat() as Array<[V, () => T]>
 

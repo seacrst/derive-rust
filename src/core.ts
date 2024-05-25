@@ -66,6 +66,10 @@ export function range(start: number, end: number): number[] {
   }
 }
 
+export function isValue(value: any): boolean {
+    return value !== null || value !== undefined;
+}
+ 
 export function rangeInc(start: number, end: number): number[] {
   return range(start, start < end ? end + 1 : end - 1);
 }

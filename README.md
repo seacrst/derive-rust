@@ -48,9 +48,14 @@ console.log(s3) // "baz or bar"
 
 class MyEnum<T = string> implements Sized<T> {
   $ref: [T] = [MyEnum.name] as [T];
+  variant: [string, T] = ["", undefined as T]; // must be public 
 
-  variant(value: T | Function | string): MyEnum<T> {
-    return setNoncallableRef(this, value) as MyEnum<T>
+  #variant(value: T | Function | string): MyEnum<T> {
+    setNoncallableRef(this, value) as MyEnum<T>
+    Object.freeze(this.$ref);
+    Object.freeze(this.variant);
+
+    return this; 
   }
 
   Foo() {
@@ -68,6 +73,7 @@ const en = match(new MyEnum().Bar(), () => [
 ], () => "");
 ```
 
+## Declarations of mentioned utils and other haven't ones
 
 ```ts
 class Option<T> implements Sized<T> {
@@ -109,14 +115,15 @@ match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn
 
 ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr?: (v: Extract<V>) => void): void;
 
-type Self<S, T = void> = (self: S) => T;
-
 interface Sized<T = null> {
     readonly $ref: [T];
 }
+
+type Self<S, T = void> = (self: S) => T;
 type Self<S, T = void> = (self: S) => T;
 type Nothing = {};
 type Unit = {};
+
 function unit(): Unit;
 function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
@@ -133,4 +140,5 @@ function rangeCharsInc(start: string, end: string, str: string): string[];
 function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T;
+function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
 ```

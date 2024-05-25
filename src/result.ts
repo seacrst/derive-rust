@@ -9,6 +9,8 @@ export class Result<T, E> implements Sized<T | E> {
   #variant(value: T | E, fn: Function): Result<T, E> {
     this.$ref[0] = value;
     this.$result = [fn.name, value];
+    Object.freeze(this.$ref);
+    Object.freeze(this.$result);
     return this;
   }
 
@@ -37,7 +39,7 @@ export class Result<T, E> implements Sized<T | E> {
   }
 
   unwrap(): T {
-    return this.isOk() ? this.$result[1] as T : panic(`Err(${JSON.stringify(this.err)})`);
+    return this.isOk() ? this.$result[1] as T : panic(`Err(${JSON.stringify(this.$result[1])})`);
   }
 
   unwrapOr(value: T): T {
@@ -52,7 +54,7 @@ export class Result<T, E> implements Sized<T | E> {
     if (this.isErr()) {
       return this.$result[1] as E;
     } else {
-      panic(`Ok(${JSON.stringify(this.ok)})`);
+      panic(`Ok(${JSON.stringify(this.$result[1])})`);
     }
   }
 
