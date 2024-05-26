@@ -29,11 +29,13 @@
     "enum",
     "variant",
     "match",
+    "pattern",
     "utilities",
     "range",
     "derive",
     "clone",
-    "compare"
+    "compare",
+    "async channel"
   ],
   "author": "Seacrest",
   "license": "MIT",

@@ -141,4 +141,5 @@ function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T;
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
+function channel<T>(): [Sender<T>, Receiver<T>];
 ```
