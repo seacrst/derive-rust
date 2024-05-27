@@ -2,7 +2,7 @@
 
 javascript utilities inspired by the Rust programming language and its standard library
 
-(FOUND A BUG WITH cmp(). I need some witime to fix it)
+(FOUND A BUG WITH cmp(). I need some time to fix it)
 
 
 ## Option\<T>
