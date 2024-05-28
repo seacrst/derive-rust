@@ -1,0 +1,5 @@
+{
+    "name": "@seacrest/derive-rust",
+    "version": "0.1.0",
+    "exports": "./src/lib.ts"
+}
