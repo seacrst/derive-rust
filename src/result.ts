@@ -75,4 +75,5 @@ export class Result<T, E> implements Sized<T | E> {
   }
 }
 
-export const {Ok, Err} = Result;
+export const Ok = Result.Ok;
+export const Err = Result.Err;
