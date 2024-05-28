@@ -64,4 +64,5 @@ export class Option<T> implements Sized<T> {
 
 }
 
-export const {Some, None} = Option; 
+export const None = Option.None; 
+export const Some = Option.Some; 
