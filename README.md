@@ -2,9 +2,6 @@
 
 javascript utilities inspired by the Rust programming language and its standard library
 
-(FOUND A BUG WITH cmp(). I need some time to fix it)
-
-
 ## Option\<T>
 
 ```ts
@@ -126,6 +123,11 @@ type Self<S, T = void> = (self: S) => T;
 type Nothing = {};
 type Unit = {};
 
+function eqType(lhs: any, rhs: any): boolean;
+function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
+function orderKeys(keys: string[], targetKeys: string[]): string[];
+function partialEq<T>(lhs: T, rhs: T): boolean;
+function eq<T>(lhs: T, rhs: T): boolean;
 function unit(): Unit;
 function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;

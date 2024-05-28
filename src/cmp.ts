@@ -189,7 +189,7 @@ export function orderKeys(keys: string[], targetKeys: string[]) {
 }
 
 
-export function partialEq<T>(lhs: T, rhs: unknown): boolean {
+export function partialEq<T>(lhs: T, rhs: T): boolean {
     return eqType(lhs, rhs);
 }
 
