@@ -96,7 +96,7 @@ export function clone<T>(value: T): T {
     return value;
   }
   
-  if (typeof value !== "function" && !(value instanceof Array)) {
+  if (typeof value !== "function" && !Array.isArray(value)) {
     return {
       ...Object.fromEntries(Object.entries(value!)
         .filter(([_, val]) => typeof val !== "function")
@@ -106,7 +106,7 @@ export function clone<T>(value: T): T {
     } as T
   }
 
-  if (value instanceof Array) {
+  if (Array.isArray(value)) {
     return value.map(v => clone(v)) as T
   }
 
