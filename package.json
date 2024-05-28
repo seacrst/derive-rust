@@ -1,25 +1,22 @@
 {
   "name": "derive-rust",
-  "version": "0.0.25",
+  "version": "0.1.0",
   "description": "javascript utilities inspired by the Rust programming language and its standard library",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
     "watch": "node --watch build/lib.js",
     "check": "esbuild src/lib.ts --bundle --outdir=build --watch",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "test": ""
   },
   "types": "./build/index.d.ts",
-  "main": "./build/lib.umd.cjs",
-  "module": "./build/lib.js",
-  "files": [
-    "./build/",
-    "./LICENSE"
-  ],
+  "main": "./build/index.umd.cjs",
+  "module": "./build/index.js",
+  "files": [ "./build/", "LICENSE"],
   "exports": {
     ".": {
-      "import": "./build/lib.js",
-      "require": "./build/lib.umd.cjs"
+      "import": "./build/index.js",
+      "require": "./build/index.umd.cjs"
     }
   },
   "keywords": [
@@ -44,7 +41,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "derive-rust": "^0.0.25",
     "esbuild": "^0.20.2",
+    "esbuild-plugin-d.ts": "^1.2.3",
     "typescript": "^5.4.5",
     "vite": "^5.2.10",
     "vite-plugin-dts": "^3.8.3"
