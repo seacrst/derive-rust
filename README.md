@@ -42,6 +42,32 @@ const s3 = match(Some("bar"), (v) => [
 console.log(s3) // "baz or bar"
 ```
 
+## You don't need to compare functions
+
+```ts
+    cmp(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case
+
+// So
+
+const o1 = {
+    a: 1,
+    fn() {}
+}
+
+const o2 = {
+    a: 1,
+    fn() {}
+}
+
+cmp(o1, o2) // 1 - means true
+eq(o1, o2) // true. It's just wrapper to cmp(o1, o2) === 1
+
+
+// But their types are different
+
+partialEq(o1, o2) // false. As it's generic wrapper to eqType()
+```
+
 ## My vision of enum definition with generic 
 ```ts
 
@@ -118,8 +144,12 @@ interface Sized<T = null> {
     readonly $ref: [T];
 }
 
-type Self<S, T = void> = (self: S) => T;
-type Self<S, T = void> = (self: S) => T;
+type Self<S, T = void> = (self: S) => T; 
+// You can define 
+constructor(impl: (self: Class) => any type you want) { impl(this) }
+// or 
+constructor(self: Self<Class>) { self(this) } // the same
+
 type Nothing = {};
 type Unit = {};
 
@@ -132,8 +162,8 @@ function unit(): Unit;
 function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function panic(reason: string): never;
-function ex<T, V>(fn: (value: V) => T, value?: V): T;
-function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
+function ex<T, V>(fn: (value: V) => T, value?: V): T; // any expression just like (function(value) {})(value). Parameter not required
+function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O; // double expression
 function getRef<T>(s: Sized<T>): T;
 function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
 function setRef<T>(self: Sized<T>, value: T): Sized<T>;
@@ -144,6 +174,14 @@ function rangeCharsInc(start: string, end: string, str: string): string[];
 function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T;
+
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
-function channel<T>(): [Sender<T>, Receiver<T>];
+
+const [tx,rx] = syncChannel();
+
+tx.send(1) // returns Result<{}, SenderError> to check if valid value has been sent
+tx.send(2)
+rx.recv() // returns Option<T>. In this case Some(1)
+
+function channel<T>(): [Sender<T>, Receiver<T>]; // async channel. send(async() => {}) returns void. recv() returns  Promise<Result<T, ReceiverError<E>>>
 ```
