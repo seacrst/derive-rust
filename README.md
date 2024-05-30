@@ -17,7 +17,7 @@ const fooOk: Result<{result: boolean}, {}> = Ok({result: true});
 const fooErr: Result<{result: boolean}, {}> = Err({});
 ```
 ## Match
-You can use **match** function with primitive and objects data. Objects implemented by **Sized\<T>** can be used for "refutable" pattern
+You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
 
 ```ts
 const s1 = match(Some("bar"), (v) => [ // v = Some("bar")
@@ -28,7 +28,7 @@ const s1 = match(Some("bar"), (v) => [ // v = Some("bar")
 console.log(s1) // ""
 
 const s2 = match(Some("bar"), (v) => [
-  [Some("baz"), Some("bar"), () => "baz or bar"], // match more than one value
+  [Some("baz"), Some("bar"), () => "baz or bar"], // arm with more than one value
   [None<string>(), () => "none"]
 ], (_, s) => s);
 
@@ -40,30 +40,38 @@ const s3 = match(Some("bar"), (v) => [
 ], (_, s) => s);
 
 console.log(s3) // "baz or bar"
+
+
+const val = match(9, () => [
+  [3, () => Some(3)],
+  [0, () => None()],
+  v => [v, () => Some(v + 1)] // pattern sample with primitives 
+], () => None())
+
+console.log(val.unwrap()) // 10
 ```
 
-## You don't need to compare functions
+## Don't compare functions
 
 ```ts
     cmp(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case
-
 // So
 
 const o1 = {
     a: 1,
-    fn() {}
+    barFn() {}
 }
 
 const o2 = {
     a: 1,
-    fn() {}
+    fooFn() {}
 }
 
 cmp(o1, o2) // 1 - means true
 eq(o1, o2) // true. It's just wrapper to cmp(o1, o2) === 1
 
 
-// But their types are different
+// But their types are different 
 
 partialEq(o1, o2) // false. As it's generic wrapper to eqType()
 ```
@@ -73,11 +81,11 @@ partialEq(o1, o2) // false. As it's generic wrapper to eqType()
 
 class MyEnum<T = string> implements Sized<T> {
   $ref: [T] = [MyEnum.name] as [T];
-  variant: [string, T] = ["", undefined as T]; // must be public for cmp() function
+  variant: [string | T] = [""]; // must be public for cmp() function
 
   #variant(value: T | Function | string): MyEnum<T> {
     setNoncallableRef(this, value) as MyEnum<T> // or this.$ref[0] = value;
-    this.$variant = [fn.name, value]; // if you don't want to store null or undefined which value might be then pass [fn.name, value ?? fn.name]  
+    this.variant = [fn.name]; // this value additionally guarantees that the object is unique
     Object.freeze(this);
 
     return this; 
@@ -92,13 +100,14 @@ class MyEnum<T = string> implements Sized<T> {
   }
 }
 
-const en = match(new MyEnum().Bar(), () => [
-  (e) => [new MyEnum().Foo(), () => e],
-  (e) => [new MyEnum().Bar(), () => e]
+const result = match(new MyEnum().Bar(), () => [
+  (v) => [new MyEnum().Foo(), () => v],
+  (v) => [new MyEnum().Bar(), () => v]
 ], () => "");
-```
 
-## Declarations of mentioned utils and other haven't ones
+console.log(result) // "Bar"
+```
+## Declarations
 
 ```ts
 class Option<T> implements Sized<T> {
@@ -146,9 +155,9 @@ interface Sized<T = null> {
 
 type Self<S, T = void> = (self: S) => T; 
 // You can define 
-constructor(impl: (self: Class) => any type you want) { impl(this) }
+constructor(impl: (self: Class) => TypeYouWant) { impl(this) }
 // or 
-constructor(self: Self<Class>) { self(this) } // the same
+constructor(self: Self<Class, TypeYouWant>) { self(this) } // the same
 
 type Nothing = {};
 type Unit = {};
@@ -162,7 +171,7 @@ function unit(): Unit;
 function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function panic(reason: string): never;
-function ex<T, V>(fn: (value: V) => T, value?: V): T; // any expression just like (function(value) {})(value). Parameter not required
+function ex<T, V>(fn: (value: V) => T, value?: V): T; // any expression just like (function(value) {})(value) . Parameter not required
 function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O; // double expression
 function getRef<T>(s: Sized<T>): T;
 function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
@@ -183,5 +192,7 @@ tx.send(1) // returns Result<{}, SenderError> to check if valid value has been s
 tx.send(2)
 rx.recv() // returns Option<T>. In this case Some(1)
 
-function channel<T>(): [Sender<T>, Receiver<T>]; // async channel. send(async() => {}) returns void. recv() returns  Promise<Result<T, ReceiverError<E>>>
+function channel<T>(): [Sender<T>, Receiver<T>]; // async channel. 
+// send(async() => {}) -> void
+// recv() ->  Promise<Result<T, ReceiverError<E>>>
 ```

@@ -1,6 +1,6 @@
 {
   "name": "derive-rust",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "javascript utilities inspired by the Rust programming language and its standard library",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
