@@ -1,38 +1,44 @@
 {
   "name": "derive-rust",
-  "version": "0.1.1",
-  "description": "javascript utilities inspired by the Rust programming language and its standard library",
+  "version": "0.1.2",
+  "description": "Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
-    "watch": "node --watch build/lib.js",
-    "check": "esbuild src/lib.ts --bundle --outdir=build --watch",
+    "watch": "node --watch lib/index.js",
+    "check": "esbuild src/index.ts --bundle --outdir=lib --watch",
     "build": "tsc && vite build",
     "test": ""
   },
-  "types": "./build/index.d.ts",
-  "main": "./build/index.umd.cjs",
-  "module": "./build/index.js",
-  "files": [ "./build/", "LICENSE"],
+  "types": "./lib/index.d.ts",
+  "main": "./lib/index.umd.cjs",
+  "module": "./lib/index.js",
+  "files": [
+    "./lib/",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "require": "./build/index.umd.cjs"
+      "import": "./lib/index.js",
+      "require": "./lib/index.umd.cjs"
     }
   },
   "keywords": [
     "rust",
+    "rustjs",
+    "rust-like",
+    "self",
     "result",
     "option",
     "enum",
     "variant",
     "match",
     "pattern",
-    "utilities",
+    "struct",
     "range",
     "derive",
     "clone",
     "compare",
-    "async channel"
+    "channels"
   ],
   "author": "Seacrest",
   "license": "MIT",
@@ -41,9 +47,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "derive-rust": "^0.0.25",
     "esbuild": "^0.20.2",
-    "esbuild-plugin-d.ts": "^1.2.3",
     "typescript": "^5.4.5",
     "vite": "^5.2.10",
     "vite-plugin-dts": "^3.8.3"

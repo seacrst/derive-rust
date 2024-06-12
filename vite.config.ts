@@ -6,7 +6,6 @@ export default defineConfig({
     lib: {
       entry: [
         "src/index.ts",
-        "src/lib.ts",
         "src/match.ts",
         "src/range.ts",
         "src/option.ts",
@@ -18,8 +17,7 @@ export default defineConfig({
       name: "derive-rust",
       fileName: (fmt, name) => fmt === "es" ? `${name}.js` : `${name}.umd.${fmt}`
     },
-    outDir: "build",
-    minify: "esbuild"
+    outDir: "lib"
   },
   plugins: [
     dts({

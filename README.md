@@ -1,6 +1,6 @@
 # derive-rust
 
-javascript utilities inspired by the Rust programming language and its standard library
+Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.
 
 ## Option\<T>
 
@@ -76,7 +76,7 @@ eq(o1, o2) // true. It's just wrapper to cmp(o1, o2) === 1
 partialEq(o1, o2) // false. As it's generic wrapper to eqType()
 ```
 
-## My vision of enum definition with generic 
+## My approach of creating enums with generics 
 ```ts
 
 class MyEnum<T = string> implements Sized<T> {
@@ -96,7 +96,7 @@ class MyEnum<T = string> implements Sized<T> {
   }
 
   Bar() {
-    return this.variant("baz")
+    return this.variant("baz");
   }
 }
 
@@ -107,6 +107,53 @@ const result = match(new MyEnum().Bar(), () => [
 
 console.log(result) // "Bar"
 ```
+## Other features
+
+```ts
+type Self<S, T = void> = (self: S) => T;
+
+// Create instances similarly to Rust
+constructor(impl: (self: Class) => TypeYouWant) { impl(this) }
+// or 
+constructor(self: Self<Class, TypeYouWant>) { self(this) } // the same
+
+
+// Ranges
+
+// 1..10
+range(1, 10) // [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+
+// 1..=10
+rangeInc(1, 10) // [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+
+// 'v'..='x'
+rangeCharsInc('v', 'x', "stuvwxyz") // [ 'v', 'w', 'x' ]
+
+// It works in the opposite way
+range(5, -5) // [ 5, 4, 3, 2, 1, 0, -1, -2, -3, -4 ]
+rangeInc(5, -5) // [ 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5 ]
+
+// For reveresed result with strings you need to use rangeCharsRev() and rangeCharsRevInc() though
+rangeCharsRev('b', 'f', "abcdefghI") // [ 'f', 'e', 'd', 'c' ]
+
+
+// Channels
+function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
+
+const [tx,rx] = syncChannel();
+
+tx.send(1) // returns Result<{}, SenderError> to check if valid value has been sent
+tx.send(2)
+rx.recv() // returns Option<T>. In this case Some(1)
+
+// Async channel
+function channel<T>(): [Sender<T>, Receiver<T>];
+
+const [tx, rx] = channel() // Saves the order of Promises resolving them through Result
+tx.send(async () => {}) // void
+rx.recv() // Promise<Result<T, ReceiverError<E>>>
+```
+
 ## Declarations
 
 ```ts
@@ -153,22 +200,13 @@ interface Sized<T = null> {
     readonly $ref: [T];
 }
 
-type Self<S, T = void> = (self: S) => T; 
-// You can define 
-constructor(impl: (self: Class) => TypeYouWant) { impl(this) }
-// or 
-constructor(self: Self<Class, TypeYouWant>) { self(this) } // the same
-
-type Nothing = {};
-type Unit = {};
+type Self<S, T = void> = (self: S) => T;
 
 function eqType(lhs: any, rhs: any): boolean;
 function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
 function orderKeys(keys: string[], targetKeys: string[]): string[];
 function partialEq<T>(lhs: T, rhs: T): boolean;
 function eq<T>(lhs: T, rhs: T): boolean;
-function unit(): Unit;
-function nothing(): Nothing;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function panic(reason: string): never;
 function ex<T, V>(fn: (value: V) => T, value?: V): T; // any expression just like (function(value) {})(value) . Parameter not required
@@ -183,16 +221,6 @@ function rangeCharsInc(start: string, end: string, str: string): string[];
 function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T;
-
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
-
-const [tx,rx] = syncChannel();
-
-tx.send(1) // returns Result<{}, SenderError> to check if valid value has been sent
-tx.send(2)
-rx.recv() // returns Option<T>. In this case Some(1)
-
-function channel<T>(): [Sender<T>, Receiver<T>]; // async channel. 
-// send(async() => {}) -> void
-// recv() ->  Promise<Result<T, ReceiverError<E>>>
+function channel<T>(): [Sender<T>, Receiver<T>];
 ```

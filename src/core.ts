@@ -2,21 +2,6 @@ export interface Sized<T = null> {
   readonly $ref: [T];
 }
 
-export type Nothing = {};
-export type Unit = {};
-
-export function unit(): Unit {
-  return (function () {
-    return "()";
-  })() as Unit;
-}
-
-export function nothing(): Nothing {
-  return (function() {
-    return "Nothing";
-  })() as Nothing
-}
-
 export type Self<S, T = void> = (self: S) => T;
 
 export function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T {
@@ -72,7 +57,6 @@ export function clone<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map(v => clone(v)) as T
   }
-
 
   return value;
 }
