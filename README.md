@@ -1,6 +1,6 @@
-# derive-rust
+# Rust-like utils for JavaScript
 
-Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.
+Start using match pattern, enums with generics and other features similarly to the Rust programming language.
 
 ## Option\<T>
 
@@ -8,6 +8,18 @@ Rust-like utils for JavaScript. Start using match pattern, enums with generics a
 const a: Option<string> = Some("hello");
 const b: Option<string> = None(); 
 const c = None<string>();
+
+// for exhaustive matching use match method
+a.match({
+  None: () => "",
+  Some: (v) => v + " world!"
+})
+
+c.match({
+  None: () => "",
+  Some: (v) => v
+})
+
 ```
 
 ## Result<T, E>
@@ -20,12 +32,12 @@ const fooErr: Result<{result: boolean}, {}> = Err({});
 You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
 
 ```ts
-const s1 = match(Some("bar"), (v) => [ // v = Some("bar")
-  [Some("baz"), () => "baz"],
+const s1 = match(Some("bar"), (opt) => [ // opt -> Some("bar")
+  [Some("baz"), () => "some"],
   [None<string>(), () => "none"]
-], (v, s) => ""); // v = Some("bar"), s = "bar"
+], (_, s) => s); // _ -> Some("bar"), s -> "bar"
 
-console.log(s1) // ""
+console.log(s1) // "bar"
 
 const s2 = match(Some("bar"), (v) => [
   [Some("baz"), Some("bar"), () => "baz or bar"], // arm with more than one value
@@ -35,7 +47,7 @@ const s2 = match(Some("bar"), (v) => [
 console.log(s2) // "baz or bar"
 
 const s3 = match(Some("bar"), (v) => [
-  (bar) => [Some("baz"), Some(bar), () => "baz or " + bar], // pattern is used by wrapping in functions
+  (bar) => [Some("baz"), Some(bar), () => "baz or " + bar], // patterns are used by wrapping in functions
   [None<string>(), () => "none"]
 ], (_, s) => s);
 
@@ -45,7 +57,7 @@ console.log(s3) // "baz or bar"
 const val = match(9, () => [
   [3, () => Some(3)],
   [0, () => None()],
-  v => [v, () => Some(v + 1)] // pattern sample with primitives 
+  (v) => [v, () => Some(v + 1)] // pattern sample with primitives 
 ], () => None())
 
 console.log(val.unwrap()) // 10
@@ -68,7 +80,7 @@ const o2 = {
 }
 
 cmp(o1, o2) // 1 - means true
-eq(o1, o2) // true. It's just wrapper to cmp(o1, o2) === 1
+eq(o1, o2) // true. eq() it's just wrapper to cmp(o1, o2) === 1
 
 
 // But their types are different 
@@ -76,36 +88,95 @@ eq(o1, o2) // true. It's just wrapper to cmp(o1, o2) === 1
 partialEq(o1, o2) // false. As it's generic wrapper to eqType()
 ```
 
-## My approach of creating enums with generics 
+## Enums
 ```ts
 
+interface MyEnumArms<T, A> {
+  Foo(value: T): A,
+  Bar(value: string): A,
+  Baz(value: string): A,
+}
+
 class MyEnum<T = string> implements Sized<T> {
-  $ref: [T] = [MyEnum.name] as [T];
-  variant: [string | T] = [""]; // must be public for cmp() function
+  static Foo = (value: string) => new MyEnum(self => self.variant.Foo, value);
+  static Bar = () => new MyEnum(self => self.variant.Bar);
+  static Baz = () => new MyEnum(self => self.variant.Baz);
 
-  #variant(value: T | Function | string): MyEnum<T> {
-    setNoncallableRef(this, value) as MyEnum<T> // or this.$ref[0] = value;
-    this.variant = [fn.name]; // this value additionally guarantees that the object is unique
+  $ref: [T]; // it is need to use pattern in match function
+  self: {
+    variant: string,
+    value: T
+  }; // must be public for cmp() function 
+
+  variant = {
+    Foo: (value: string) => value,
+    Bar: () => {},
+    Baz: () => {},
+  }
+
+  private constructor(impl: (self: MyEnum<T>) => Function, value?: T) {
+    let variant = impl(this);
+
+    this.self = {
+      variant: variant.name, 
+      value: variant(value) ?? variant.name as T
+    };
+
+    this.$ref = [this.self.value];
     Object.freeze(this);
-
-    return this; 
+    Object.freeze(this.self);
+    Object.freeze(this.$ref);
   }
 
-  Foo() {
-    return this.variant(this.Foo);
-  }
-
-  Bar() {
-    return this.variant("baz");
+  match<A>(arms: MyEnumArms<T, A>): A {
+    switch (this.self.variant) {
+      case arms.Foo.name: return arms.Foo(this.self.value);
+      case arms.Bar.name: return arms.Bar(arms.Bar.name);
+      default: return arms.Baz(arms.Baz.name);
+    }
   }
 }
 
-const result = match(new MyEnum().Bar(), () => [
-  (v) => [new MyEnum().Foo(), () => v],
-  (v) => [new MyEnum().Bar(), () => v]
-], () => "");
+const fooMatch = MyEnum.Foo("foo").match({
+  Foo: (foo) => `my ${foo} value`,
+  Bar: (bar) => `my ${bar} value`,
+  Baz: (baz) => `my ${baz} value`,
+});
 
-console.log(result) // "Bar"
+console.log({fooMatch}) // { fooMatch: 'my foo value' }
+
+const bazMatch = MyEnum.Baz().match({
+  Foo: (foo) => `my ${foo} value`,
+  Bar: (bar) => `my ${bar} value`,
+  Baz: (baz) => `my ${baz + baz.slice(-1)} value`,
+});
+
+
+console.log({bazMatch}) // { bazMatch: 'my Bazz value' }
+
+match(MyEnum.Foo("hello"), () => [
+  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
+  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar)]
+], (_, hello) => console.log(hello))
+
+// hello world
+// ________________
+
+match(MyEnum.Bar(), () => [
+  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
+  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar.toLowerCase())]
+], (_, hello) => console.log(hello))
+
+// hello bar
+// ________________
+
+match(MyEnum.Baz(), () => [
+  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
+  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar.toLowerCase())]
+], (_, Baz) => console.log(Baz.toLowerCase()))
+
+// baz
+// ________________
 ```
 ## Other features
 
@@ -157,40 +228,65 @@ rx.recv() // Promise<Result<T, ReceiverError<E>>>
 ## Declarations
 
 ```ts
-class Option<T> implements Sized<T> {
-    #private;
+export interface OptionArms<T, A> {
+    Some(value: T): A;
+    None(): A;
+}
+interface OptionSelf<T> {
+    variant: string;
+    value: T;
+}
+export declare class Option<T> implements Sized<T> {
     $ref: [T];
-    $option: [string, T];
-    some(value: T): Option<T>;
-    none(): Option<T>;
-    unwrap(): T;
-    expect(message: string): T;
+    self: OptionSelf<T>;
+    private constructor();
+    static None<T>(): Option<T>;
+    static Some<T>(value: T): Option<T>;
+    static from<T>(value: T): Option<T>; // Get Some if provided value not null or undefined otherwise None
+    match<A>(arms: OptionArms<T, A>): A;
+    unwrap(): T; // Panics if None
     unwrapOr(value: T): T;
+    expect(message: string): T; // Panics if None
     isNone(): boolean;
     isSome(): boolean;
     intoResult<E>(error: E): Result<T, E>;
-    static from<T>(value: T): Option<T>;
-    static None<T = unknown>(): Option<T>;
-    static Some<T>(value: T): Option<T>;
+    map<F>(fn: (value: T) => F): Option<F>;
+    okOr<E>(err: E): Result<T, E>;
+    okOrElse<E>(fn: () => E): Result<T, E>;
+    ifLet<F>(fn: (opt: T) => Option<T>, ifExpr: (value: T) => F, elseExpr?: (value: T) => F): F;
 }
 
-class Result<T, E> implements Sized<T | E> {
-    #private;
-    $ref: [T | E];
-    $result: [string, T | E];
-    ok(value: T): Result<T, E>;
-    err(value: E): Result<T, E>;
-    isOk(): boolean;
-    isErr(): boolean;
-    expect(message: string): T;
-    unwrap(): T;
-    unwrapOr(value: T): T;
-    unwrapErr(): E;
-    intoOption(): Option<T>;
-    static from<T, E>(value: T | E): Result<T, E>;
-    static Ok<T, E>(value: T): Result<T, E>;
-    static Err<E, T>(value: E): Result<T, E>;
+
+export interface ResultArms<T, E, A> {
+    Err(err: E): A;
+    Ok(ok: T): A;
 }
+interface ResultSelf<T, E> {
+    value: T | E;
+    variant: string;
+}
+export declare class Result<T, E> implements Sized<T | E> {
+    $ref: [T | E];
+    self: ResultSelf<T, E>;
+    private constructor();
+    static Err<E, T>(value: E): Result<T, E>;
+    static Ok<T, E>(value: T): Result<T, E>;
+    static from<T, E>(value: T | E): Result<T, E>; // Get Ok if provided value not null or undefined otherwise Err
+    match<A>(arms: ResultArms<T, E, A>): A;
+    isErr(): boolean;
+    isOk(): boolean;
+    ok(): Option<T>;
+    err(): Option<E>;
+    unwrap(): T; // Panics if Err
+    unwrapOr(value: T): T;
+    unwrapErr(): E; // Panics if Ok
+    expect(message: string): T; // Panics if Err
+    intoOption(): Option<T>;
+    map<F>(fn: (ok: T) => F): Result<F, E>;
+    mapErr<F>(fn: (err: E) => F): Result<T, F>;
+    ifLet<F>(fn: (r: T | E) => Result<T, E>, ifExpr: (value: T | E) => F, elseExpr?: (value: T | E) => F): F;
+}
+
 
 match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
 
@@ -209,7 +305,7 @@ function partialEq<T>(lhs: T, rhs: T): boolean;
 function eq<T>(lhs: T, rhs: T): boolean;
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function panic(reason: string): never;
-function ex<T, V>(fn: (value: V) => T, value?: V): T; // any expression just like (function(value) {})(value) . Parameter not required
+function ex<T, V>(fn: (value: V) => T, value?: V): T; // expression; the same as (() => {})()
 function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O; // double expression
 function getRef<T>(s: Sized<T>): T;
 function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
@@ -220,7 +316,7 @@ function rangeChars(start: string, end: string, str: string): string[];
 function rangeCharsInc(start: string, end: string, str: string): string[];
 function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
-function clone<T>(value: T): T;
-function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
+function clone<T>(value: T): T; // structuredClone but with methods
+function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>]; 
 function channel<T>(): [Sender<T>, Receiver<T>];
 ```
