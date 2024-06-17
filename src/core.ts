@@ -4,6 +4,12 @@ export interface Sized<T = null> {
 
 export type Self<S, T = void> = (self: S) => T;
 
+export function implStruct<S>(target: S, self: S) {
+  for (const key in self) {
+    target[key] = self[key];
+  }
+}
+
 export function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T {
   return fn(self.$ref[0]);
 }

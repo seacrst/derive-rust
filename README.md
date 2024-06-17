@@ -177,17 +177,66 @@ match(MyEnum.Baz(), () => [
 
 // baz
 // ________________
+
+Some(10).ifLet((n) => Some(n), (n) => {
+  console.log(n / 2)
+})
+
+// as Some is a function itself we can pass its ref
+
+Some(10).ifLet(Some, (num) => {
+  console.log(num / 2);
+}, () => {
+  console.log("None 10"); // you can call optional else expression
+})
+
+```
+
+## Structs
+
+```ts
+interface FooStruct {
+  a: string,
+  b: number
+}
+
+class Foo implements FooStruct {
+  a: string;
+  b: number;
+
+  constructor(struct: FooStruct) {
+    implStruct(this, struct); // If you have many fields then call it
+  }
+}
+
+const foo = new Foo({
+  a: "",
+  b: 10
+});
+
+// Or
+
+type Self<S, T = void> = (self: S) => T;
+
+class Foo {
+  bar: string;
+
+  constructor(impl: (self: Foo) => TypeYouWantOrVoid) { 
+    impl(this);
+  }
+  // or 
+  constructor(self: Self<Foo>) { 
+    self(this);
+  } // the same
+}
+
+const foo = new Foo(self => {
+  self.bar = "hello";
+});
 ```
 ## Other features
 
 ```ts
-type Self<S, T = void> = (self: S) => T;
-
-// Create instances similarly to Rust
-constructor(impl: (self: Class) => TypeYouWant) { impl(this) }
-// or 
-constructor(self: Self<Class, TypeYouWant>) { self(this) } // the same
-
 
 // Ranges
 
@@ -216,27 +265,21 @@ const [tx,rx] = syncChannel();
 tx.send(1) // returns Result<{}, SenderError> to check if valid value has been sent
 tx.send(2)
 rx.recv() // returns Option<T>. In this case Some(1)
-
-// Async channel
-function channel<T>(): [Sender<T>, Receiver<T>];
-
-const [tx, rx] = channel() // Saves the order of Promises resolving them through Result
-tx.send(async () => {}) // void
-rx.recv() // Promise<Result<T, ReceiverError<E>>>
 ```
 
 ## Declarations
 
 ```ts
-export interface OptionArms<T, A> {
+interface OptionArms<T, A> {
     Some(value: T): A;
     None(): A;
 }
+
 interface OptionSelf<T> {
     variant: string;
     value: T;
 }
-export declare class Option<T> implements Sized<T> {
+class Option<T> implements Sized<T> {
     $ref: [T];
     self: OptionSelf<T>;
     private constructor();
@@ -257,15 +300,17 @@ export declare class Option<T> implements Sized<T> {
 }
 
 
-export interface ResultArms<T, E, A> {
+interface ResultArms<T, E, A> {
     Err(err: E): A;
     Ok(ok: T): A;
 }
+
 interface ResultSelf<T, E> {
     value: T | E;
     variant: string;
 }
-export declare class Result<T, E> implements Sized<T | E> {
+
+class Result<T, E> implements Sized<T | E> {
     $ref: [T | E];
     self: ResultSelf<T, E>;
     private constructor();
@@ -288,9 +333,9 @@ export declare class Result<T, E> implements Sized<T | E> {
 }
 
 
-match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
+function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
 
-ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr?: (v: Extract<V>) => void): void;
+function ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr?: (v: Extract<V>) => void): void;
 
 interface Sized<T = null> {
     readonly $ref: [T];
@@ -298,6 +343,7 @@ interface Sized<T = null> {
 
 type Self<S, T = void> = (self: S) => T;
 
+function implStruct<S>(target: S, self: S): void;
 function eqType(lhs: any, rhs: any): boolean;
 function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
 function orderKeys(keys: string[], targetKeys: string[]): string[];
