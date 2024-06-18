@@ -285,6 +285,38 @@ const [tx,rx] = syncChannel();
 tx.send(1) // returns Result<{}, SenderError> to check if valid value has been sent
 tx.send(2)
 rx.recv() // returns Option<T>. In this case Some(1)
+
+
+// Async channel
+const [tx, rx] = channel<{data: string[]}>();
+
+tx.send(Promise.resolve({data: ["foo"]}));
+tx.send(Promise.reject("ERROR"));
+tx.send(Promise.resolve({data: ["bar"]}));
+
+range(1, 5).forEach(async (idx) => {
+  const result = await rx.recv();
+
+  result.mapErr(() => "Empty").match({
+    Ok:(data) => console.log(data, idx),
+    Err:(err) => console.error(err, idx) 
+  })
+})
+
+rx.recv().then(r => r.mapErr(() => "Complete").match({
+    Ok:(data) => console.log(data),
+    Err:(err) => console.error(err, 5) 
+  })
+)
+
+// Output: 
+// { data: [ 'foo' ] } 1
+// ERROR 2
+// { data: [ 'bar' ] } 3
+// Empty 4
+// Complete 5
+
+
 ```
 
 ## Declarations

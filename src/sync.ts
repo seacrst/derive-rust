@@ -1,4 +1,4 @@
-import { Sized, isValue } from "./core";
+import { Self, Sized, isValue } from "./core";
 import { Option } from "./option";
 import { Err, Ok, Result } from "./result";
 
@@ -10,34 +10,12 @@ export class SenderError {
     }
 }
 
-export class ReceiverError<E> implements Sized<E> {
-    $ref: [E] = [ReceiverError.name as E];
-    variant = [ReceiverError.name, null as E];
+export class ReceiverError {
+  error: string;
 
-    #variant(fn: Function, err: E) {
-        this.$ref[0] = err;
-        this.variant = [fn.name, err];
-        Object.freeze(this);
-
-        return this;
-    }
-
-    empty() {
-        return this.#variant(this.empty, null as E);
-    }
-
-    error(err: E) {
-        return this.#variant(this.error, err)
-    }
-
-    static Empty<E>() {
-        return new ReceiverError<E>().empty();
-    }
-
-
-    static Error<E>(err: E) {
-        return new ReceiverError<E>().error(err);
-    }
+  constructor(self: Self<ReceiverError>) {
+    self(this);
+  }
 }
 
 export class SyncSender<T> {
@@ -64,18 +42,15 @@ export class SyncSender<T> {
 }
 
 export class SyncReceiver<T> {
-  #messages: T[] = [];
-
-  set messages(msgs: T[]) {
-    this.#messages.length === 0 && void (this.#messages = msgs);
-  }
+  messages: T[] = [];
 
   constructor(impl: (self: SyncReceiver<T>) => void) {
     impl(this);
+
   }
 
   recv(): Option<T> {
-    return Option.from<T>(this.#messages.pop()!);
+    return Option.from<T>(this.messages.pop());
   }
 }
 
@@ -89,52 +64,52 @@ export function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>] {
 }
 
 export class Sender<T> {
-    tasks: Promise<Promise<T>[]> = Promise.resolve([]);
+  task: Promise<Result<T, ReceiverError>>;
+  sender: SyncSender<Promise<T>>;
 
-    constructor(impl: (self: Sender<T>) => void) {
-        impl(this);
-    }
-    
-    send(task: Promise<T>) {
-        this.tasks.then(t => {
-            t.unshift(task);
-        });
-    }
+  constructor(self: Self<Sender<T>>) {
+    self(this);
+  }
+  
+  send(task: Promise<T>) {
+    this.sender.send(task.catch(err => err));
+  }
 }
 
 export class Receiver<T> {
-    tasks: Promise<Promise<T>[]> = Promise.resolve([]);
+    task: Promise<Result<T, ReceiverError>>;
+    receiver: SyncReceiver<Promise<T>>;
 
-    constructor(impl: (self: Receiver<T>) => void) {
-        impl(this);
+    constructor(self: Self<Receiver<T>>) {
+      self(this);
     }
 
-    recv<E = unknown>(): Promise<Result<T, ReceiverError<E>>> {
-        return this.tasks
-            .then(t => {
-                const task = t.pop();
-
-                if (!task) {
-                    return Err<ReceiverError<E>, T>(ReceiverError.Empty())
-                }
-
-                return task.then(t => {
-                    return Ok<T, ReceiverError<E>>(t)
-                }).catch(err => Err<ReceiverError<E>, T>(ReceiverError.Error(err)))
-                
-            }).catch(err => Err<ReceiverError<E>, T>(ReceiverError.Error(err)));
+    recv(): Promise<Result<T, ReceiverError>> {
+      const error = new ReceiverError(self => self.error = ReceiverError.name);
+      return this.receiver.recv().match({
+        Some: (task) => task
+          .then(ok => this.task.then(() => Ok<T, ReceiverError>(ok)))
+          .catch(err => this.task.then(() => Err<ReceiverError, T>(err as ReceiverError))),
+        None: () => Promise
+          .resolve(Err<ReceiverError, T>(error))
+      })
     }
 }
 
 export function channel<T>(): [Sender<T>, Receiver<T>] {
-    const tasks: Promise<Promise<T>[]> = Promise.resolve([]);
+    const task: Promise<Result<T, ReceiverError>> = Promise
+      .resolve(Err<ReceiverError, T>(new ReceiverError(self => self.error = ReceiverError.name)));
+
+    const [sender, receiver] = syncChannel<Promise<T>>();
     
     const tx = new Sender<T>(self => {
-        self.tasks = tasks;
+        self.sender = sender;
+        self.task = task
     });
 
     const rx = new Receiver<T>(self => {
-        self.tasks = tasks;
+        self.task = task;
+        self.receiver = receiver;
     });
     
     return [tx, rx];
