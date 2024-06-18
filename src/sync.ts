@@ -18,10 +18,10 @@ export class ReceiverError {
   }
 }
 
-class Propagation {
-  $propagation: any;
+class Propagation<E> {
+  $propagation: E;
 
-  constructor(value: any) {
+  constructor(value: E) {
     this.$propagation = value;
   }
 }
@@ -91,7 +91,6 @@ export class Receiver<T> {
     }
 
     recv<E = ReceiverError>(): Promise<Result<T, E>> {
-      const error = new ReceiverError(self => self.error = ReceiverError.name);
       return this.receiver.recv().match({
         Some:(task) => task.then(ok => this.task
           .then(() => ok instanceof Propagation ? 
@@ -99,7 +98,7 @@ export class Receiver<T> {
             Ok<T, E>(ok)
           ))
           .catch(err => this.task.then(() => Err<E, T>(err as E))),
-        None:() => Promise.resolve(Err<E, T>(error as E))
+        None:() => Promise.resolve(Err<E, T>(new ReceiverError(self => self.error = ReceiverError.name) as E))
       })
     }
 }
