@@ -9,7 +9,7 @@ const a: Option<string> = Some("hello");
 const b: Option<string> = None(); 
 const c = None<string>();
 
-// for exhaustive matching use match method
+// match() method for exhausted matching
 a.match({
   None: () => "",
   Some: (v) => v + " world!"
@@ -20,6 +20,15 @@ c.match({
   Some: (v) => v
 })
 
+// Data validation
+
+const opt = Option.from<number>(undefined);
+
+const x2Num = opt.match({
+  Some: (num) => num * 2,
+  None: () => panic("null or undefined")
+});
+
 ```
 
 ## Result<T, E>
@@ -27,6 +36,16 @@ c.match({
 ```ts
 const fooOk: Result<{result: boolean}, {}> = Ok({result: true});
 const fooErr: Result<{result: boolean}, {}> = Err({});
+
+// Data validation
+
+const result = Result.from<{data: Data[]}>(null);
+
+const data = result.match({
+  Err: () => panic("null or undefined"),
+  Ok: (value) => value.data
+});
+
 ```
 ## Match
 You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
@@ -205,7 +224,8 @@ class Foo implements FooStruct {
   b: number;
 
   constructor(struct: FooStruct) {
-    implStruct(this, struct); // If you have many fields then call it
+    implStruct(this, struct); // Call it when you have too many fields have to be assigned. 
+    // Be cautious. this - is the FIRST ARGUMENT
   }
 }
 
@@ -285,7 +305,7 @@ class Option<T> implements Sized<T> {
     private constructor();
     static None<T>(): Option<T>;
     static Some<T>(value: T): Option<T>;
-    static from<T>(value: T): Option<T>; // Get Some if provided value not null or undefined otherwise None
+    static from<T>(value: T | null | undefined): Option<T>; // Get Some if provided value not null or undefined otherwise None
     match<A>(arms: OptionArms<T, A>): A;
     unwrap(): T; // Panics if None
     unwrapOr(value: T): T;
@@ -316,7 +336,7 @@ class Result<T, E> implements Sized<T | E> {
     private constructor();
     static Err<E, T>(value: E): Result<T, E>;
     static Ok<T, E>(value: T): Result<T, E>;
-    static from<T, E>(value: T | E): Result<T, E>; // Get Ok if provided value not null or undefined otherwise Err
+    static from<T>(value: T | null | undefined): Result<T, null | undefined>; // Get Ok if provided value not null or undefined otherwise Err
     match<A>(arms: ResultArms<T, E, A>): A;
     isErr(): boolean;
     isOk(): boolean;

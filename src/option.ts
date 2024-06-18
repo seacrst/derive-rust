@@ -32,7 +32,7 @@ export class Option<T> implements Sized<T> {
     return new Option(Some, value);
   }
 
-  static from<T>(value: T): Option<T> {
+  static from<T>(value: T | null | undefined): Option<T> {
     return value === null || value === undefined ? None() : Some(value);
   }
 

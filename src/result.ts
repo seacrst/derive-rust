@@ -31,10 +31,10 @@ export class Result<T, E> implements Sized<T | E> {
     return new Result<T, E>(Ok, value);
   }
 
-  static from<T, E>(value: T | E): Result<T, E> {
+  static from<T>(value: T | null | undefined): Result<T, null | undefined> {
     return value === null || value === undefined
-      ? Result.Err<E, T>(value as E)
-      : Result.Ok<T, E>(value as T);
+      ? Result.Err<null | undefined, T>(value as null | undefined)
+      : Result.Ok<T, null | undefined>(value as T);
   }
 
   match<A>(arms: ResultArms<T, E, A>): A {

@@ -1,6 +1,3 @@
-import { implStruct } from "./core";
-import { Some } from "./option";
-
 export * from "./cmp";
 export * from "./core";
 export * from "./match";
