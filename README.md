@@ -294,29 +294,32 @@ tx.send(Promise.resolve({data: ["foo"]}));
 tx.send(Promise.reject("ERROR"));
 tx.send(Promise.resolve({data: ["bar"]}));
 
-range(1, 5).forEach(async (idx) => {
+const last = 5
+
+range(1, last).forEach(async (current) => {
   const result = await rx.recv();
 
-  result.mapErr(() => "Empty").match({
-    Ok:(data) => console.log(data, idx),
-    Err:(err) => console.error(err, idx) 
+  result.mapErr((err) => current !== 2 ? "Empty" : err).match({
+    Ok:(data) => console.log("ok ==> ", data, current),
+    Err:(err) => console.error("err ==> ", err, current) 
   })
-})
+});
 
-rx.recv().then(r => r.mapErr(() => "Complete").match({
+rx.recv().then(result => {
+  result.mapErr(() => "Completed").match({
     Ok:(data) => console.log(data),
-    Err:(err) => console.error(err, 5) 
+    Err:(err) => console.error("err ==>", err, last) 
   })
-)
+}
+);
 
-// Output: 
-// { data: [ 'foo' ] } 1
-// ERROR 2
-// { data: [ 'bar' ] } 3
-// Empty 4
-// Complete 5
+// Output:
 
-
+// ok ==>  { data: [ 'foo' ] } 1
+// err ==>  ERROR 2
+// ok ==>  { data: [ 'bar' ] } 3
+// err ==>  Empty 4
+// err ==> Completed 5
 ```
 
 ## Declarations

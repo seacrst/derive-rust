@@ -1,5 +1,5 @@
 import { Self, Sized, isValue } from "./core";
-import { Option } from "./option";
+import { None, Option } from "./option";
 import { Err, Ok, Result } from "./result";
 
 export class SenderError {
@@ -15,6 +15,14 @@ export class ReceiverError {
 
   constructor(self: Self<ReceiverError>) {
     self(this);
+  }
+}
+
+class Propagation {
+  $propagation: any;
+
+  constructor(value: any) {
+    this.$propagation = value;
   }
 }
 
@@ -46,7 +54,6 @@ export class SyncReceiver<T> {
 
   constructor(impl: (self: SyncReceiver<T>) => void) {
     impl(this);
-
   }
 
   recv(): Option<T> {
@@ -64,7 +71,6 @@ export function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>] {
 }
 
 export class Sender<T> {
-  task: Promise<Result<T, ReceiverError>>;
   sender: SyncSender<Promise<T>>;
 
   constructor(self: Self<Sender<T>>) {
@@ -72,7 +78,7 @@ export class Sender<T> {
   }
   
   send(task: Promise<T>) {
-    this.sender.send(task.catch(err => err));
+    this.sender.send(task.catch(err => new Propagation(err) as T));
   }
 }
 
@@ -84,14 +90,16 @@ export class Receiver<T> {
       self(this);
     }
 
-    recv(): Promise<Result<T, ReceiverError>> {
+    recv<E = ReceiverError>(): Promise<Result<T, E>> {
       const error = new ReceiverError(self => self.error = ReceiverError.name);
       return this.receiver.recv().match({
-        Some: (task) => task
-          .then(ok => this.task.then(() => Ok<T, ReceiverError>(ok)))
-          .catch(err => this.task.then(() => Err<ReceiverError, T>(err as ReceiverError))),
-        None: () => Promise
-          .resolve(Err<ReceiverError, T>(error))
+        Some:(task) => task.then(ok => this.task
+          .then(() => ok instanceof Propagation ? 
+            Err<E, T>(ok.$propagation) :
+            Ok<T, E>(ok)
+          ))
+          .catch(err => this.task.then(() => Err<E, T>(err as E))),
+        None:() => Promise.resolve(Err<E, T>(error as E))
       })
     }
 }
@@ -104,7 +112,6 @@ export function channel<T>(): [Sender<T>, Receiver<T>] {
     
     const tx = new Sender<T>(self => {
         self.sender = sender;
-        self.task = task
     });
 
     const rx = new Receiver<T>(self => {
