@@ -27,11 +27,7 @@ class Propagation<E> {
 }
 
 export class SyncSender<T> {
-  #messages: T[] = [];
-  
-  set messages(msgs: T[]) {
-    this.#messages.length === 0 && void (this.#messages = msgs);
-  }
+  messages: T[] = [];
 
   constructor(impl: (self: SyncSender<T>) => void) {
     impl(this);
@@ -39,7 +35,7 @@ export class SyncSender<T> {
   
   send(value: T): Result<{}, SenderError> {
     if (isValue(value)) {
-        this.#messages.unshift(value);
+        this.messages.unshift(value);
         return Ok({})
     } else {
         return Err(new SenderError(self => {
@@ -98,14 +94,14 @@ export class Receiver<T> {
             Ok<T, E>(ok)
           ))
           .catch(err => this.task.then(() => Err<E, T>(err as E))),
-        None:() => Promise.resolve(Err<E, T>(new ReceiverError(self => self.error = ReceiverError.name) as E))
+        None:() => Promise.resolve(Err<E, T>(new ReceiverError(self => self.error = "None") as E))
       })
     }
 }
 
 export function channel<T>(): [Sender<T>, Receiver<T>] {
     const task: Promise<Result<T, ReceiverError>> = Promise
-      .resolve(Err<ReceiverError, T>(new ReceiverError(self => self.error = ReceiverError.name)));
+      .resolve(Err<ReceiverError, T>(new ReceiverError(self => self.error = "None")));
 
     const [sender, receiver] = syncChannel<Promise<T>>();
     

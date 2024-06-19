@@ -276,6 +276,13 @@ rangeInc(5, -5) // [ 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5 ]
 // For reveresed result with strings you need to use rangeCharsRev() and rangeCharsRevInc() though
 rangeCharsRev('b', 'f', "abcdefghI") // [ 'f', 'e', 'd', 'c' ]
 
+// If omitted started/ended by empty string, you get tail/head respectively
+rangeChars('c', '', "abcd12553") // ['c', 'd', '1', '2', '5', '5', '3']
+
+// However it does work with distinctive characters
+// You can see 5 two times so takes first one. If you need advanced approach then use string slice method
+rangeChars('', '5', "abcd12553") // ['a', 'b', 'c','d', '1', '2', '5']
+
 
 // Channels
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
@@ -334,6 +341,7 @@ interface OptionSelf<T> {
     variant: string;
     value: T;
 }
+
 class Option<T> implements Sized<T> {
     $ref: [T];
     self: OptionSelf<T>;
@@ -398,19 +406,6 @@ interface Sized<T = null> {
 
 type Self<S, T = void> = (self: S) => T;
 
-function implStruct<S>(target: S, self: S): void;
-function eqType(lhs: any, rhs: any): boolean;
-function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
-function orderKeys(keys: string[], targetKeys: string[]): string[];
-function partialEq<T>(lhs: T, rhs: T): boolean;
-function eq<T>(lhs: T, rhs: T): boolean;
-function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
-function panic(reason: string): never;
-function ex<T, V>(fn: (value: V) => T, value?: V): T; // expression; the same as (() => {})()
-function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O; // double expression
-function getRef<T>(s: Sized<T>): T;
-function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
-function setRef<T>(self: Sized<T>, value: T): Sized<T>;
 function range(start: number, end: number): number[];
 function rangeInc(start: number, end: number): number[];
 function rangeChars(start: string, end: string, str: string): string[];
@@ -420,4 +415,20 @@ function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T; // structuredClone but with methods
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>]; 
 function channel<T>(): [Sender<T>, Receiver<T>];
+function implStruct<S>(target: S, self: S): void;
+function eqType(lhs: any, rhs: any): boolean;
+function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
+function partialEq<T>(lhs: T, rhs: T): boolean;
+function eq<T>(lhs: T, rhs: T): boolean;
+function panic(reason: string): never;
+// expression; the same as (() => {})() 
+function ex<T, V>(fn: (value: V) => T, value?: V): T;
+
+// double expression
+function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
+function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
+function getRef<T>(s: Sized<T>): T;
+function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
+function setRef<T>(self: Sized<T>, value: T): Sized<T>;
+function orderKeys(keys: string[], targetKeys: string[]): string[];
 ```
