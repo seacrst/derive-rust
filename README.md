@@ -108,10 +108,11 @@ partialEq(o1, o2) // false. As it's generic wrapper to eqType()
 ```
 
 ## Box\<T>
-It might be useful when you need to store null or undefined deliberately
+It can be useful for guarding values like empty strings or zeros which give you **false** result in comparisons.
+Also when you need to store null or undefined deliberately
 
 ```ts
-[undefined, null, ...].find(value => value???) 
+[undefined, null, ...].find(value => value === undefined) // ???
 // it returns undefined when nothing is found but array includes undefined as actual value
 
 // Another example
