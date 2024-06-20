@@ -1,6 +1,6 @@
 {
   "name": "derive-rust",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",

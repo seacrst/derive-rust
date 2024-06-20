@@ -85,7 +85,7 @@ console.log(val.unwrap()) // 10
 ## Don't compare functions
 
 ```ts
-    cmp(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case
+    cmp(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case.
 // So
 
 const o1 = {
@@ -105,6 +105,35 @@ eq(o1, o2) // true. eq() it's just wrapper to cmp(o1, o2) === 1
 // But their types are different 
 
 partialEq(o1, o2) // false. As it's generic wrapper to eqType()
+```
+
+## Box\<T>
+It might be useful when you need to store null or undefined deliberately
+
+```ts
+[undefined, null, ...].find(value => value???) 
+// it returns undefined when nothing is found but array includes undefined as actual value?
+
+// Another example
+function foo(): void { }
+
+function bar(): void {
+  return undefined;
+}
+// They are the same but what if...
+
+function bar(): Box<undefined> {
+  return new Box(undefined);
+}
+
+// or 
+// box function also added if you don't like new keyword
+function bar(): Box<undefined> {
+  return box(undefined); 
+}
+
+const boxed = bar();
+boxed.leak() // undefined as value
 ```
 
 ## Enums
@@ -138,7 +167,7 @@ class MyEnum<T = string> implements Sized<T> {
 
     this.self = {
       variant: variant.name, 
-      value: variant(value) ?? variant.name as T
+      value: variant(value) ?? variant.name as T // use Box<T> if you need to store null or undefined 
     };
 
     this.$ref = [this.self.value];
@@ -167,7 +196,7 @@ console.log({fooMatch}) // { fooMatch: 'my foo value' }
 const bazMatch = MyEnum.Baz().match({
   Foo: (foo) => `my ${foo} value`,
   Bar: (bar) => `my ${bar} value`,
-  Baz: (baz) => `my ${baz + baz.slice(-1)} value`,
+  Baz: (baz) => `my ${baz} value`,
 });
 
 
@@ -406,6 +435,13 @@ interface Sized<T = null> {
 
 type Self<S, T = void> = (self: S) => T;
 
+class Box<T> {
+    private boxed;
+    constructor(boxed: T);
+    leak(): T;
+}
+
+box<T>(boxed: T): Box<T>;
 function range(start: number, end: number): number[];
 function rangeInc(start: number, end: number): number[];
 function rangeChars(start: string, end: string, str: string): string[];

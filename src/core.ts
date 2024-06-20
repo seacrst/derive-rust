@@ -66,3 +66,18 @@ export function clone<T>(value: T): T {
 
   return value;
 }
+
+
+export class Box<T> {
+  constructor(private boxed: T) {
+    Object.freeze(this);
+  }
+
+  leak(): T {
+    return this.boxed;
+  }
+}
+
+export function box<T>(boxed: T): Box<T> {
+  return new Box(boxed);
+}
