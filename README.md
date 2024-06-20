@@ -123,7 +123,7 @@ function bar(): void {
 // They are the same but what if...
 
 function bar(): Box<undefined> {
-  return new Box(undefined);
+  return new Box(undefined); // Implements Sized<T> so you can use it in match with refutable pattern
 }
 
 // or 
@@ -283,12 +283,10 @@ const foo = new Foo(self => {
   self.bar = "hello";
 });
 ```
-## Other features
+
+## Ranges
 
 ```ts
-
-// Ranges
-
 // 1..10
 range(1, 10) // [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
@@ -311,9 +309,11 @@ rangeChars('c', '', "abcd12553") // ['c', 'd', '1', '2', '5', '5', '3']
 // However it does work with distinctive characters
 // You can see 5 two times so takes first one. If you need advanced approach then use string slice method
 rangeChars('', '5', "abcd12553") // ['a', 'b', 'c','d', '1', '2', '5']
+```
 
+## Channels
 
-// Channels
+```ts
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
 
 const [tx,rx] = syncChannel();
@@ -435,8 +435,9 @@ interface Sized<T = null> {
 
 type Self<S, T = void> = (self: S) => T;
 
-class Box<T> {
-    private boxed;
+class Box<T> implements Sized<T> {
+    #private;
+    readonly $ref: [T];
     constructor(boxed: T);
     leak(): T;
 }

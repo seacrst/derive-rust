@@ -68,13 +68,18 @@ export function clone<T>(value: T): T {
 }
 
 
-export class Box<T> {
-  constructor(private boxed: T) {
+export class Box<T> implements Sized<T> {
+  readonly $ref: [T];
+  #boxed: T;
+  constructor(boxed: T) {
+    this.$ref = [boxed];
+    this.#boxed = boxed;
+    Object.freeze(this.$ref);
     Object.freeze(this);
   }
 
   leak(): T {
-    return this.boxed;
+    return this.#boxed;
   }
 }
 
