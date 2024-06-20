@@ -1,5 +1,5 @@
 {
     "name": "@seacrest/derive-rust",
-    "version": "0.2.71",
+    "version": "0.2.8",
     "exports": "./src/index.ts"
 }

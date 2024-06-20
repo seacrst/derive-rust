@@ -37,6 +37,29 @@ export class Result<T, E> implements Sized<T | E> {
       : Result.Ok<T, null | undefined>(value as T);
   }
 
+  static fromNever<T, E>(fn: () => T): Result<T, E> {
+    try {
+      return Ok(fn());
+    } catch (err) {
+      return Err(err as E);
+    }
+  }
+
+  static fromPromise<T, E>(promise: Promise<T>): Promise<Result<T, E>> {
+    return promise
+      .then(ok => Ok<T, E>(ok))
+      .catch(err => Err<E, T>(err as E));
+  }
+
+  static async fromAsync<T, E>(fn: () => Promise<T>): Promise<Result<T, E>> {
+    try {
+      const ok = await fn();
+      return Ok(ok);
+    } catch (err) {
+      return Err(err as E);
+    }
+  }
+
   match<A>(arms: ResultArms<T, E, A>): A {
     switch (this.self.variant) {
       case arms.Ok.name: {

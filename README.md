@@ -46,6 +46,15 @@ const data = result.match({
   Ok: (value) => value.data
 });
 
+// Error interception
+Result.fromNever(() => { throw "Thrown" }).unwrapErr() // Thrown
+
+Result.fromPromise(Promise.reject("Rejected"))
+  .then(r => r.unwrapErr()) // Rejected
+
+Result.fromAsync(async () => await fetch("You should learn Rust"))
+  .then(r => r.unwrapErr()) // Response error
+
 ```
 ## Match
 You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
@@ -409,7 +418,10 @@ class Result<T, E> implements Sized<T | E> {
     private constructor();
     static Err<E, T>(value: E): Result<T, E>;
     static Ok<T, E>(value: T): Result<T, E>;
-    static from<T>(value: T | null | undefined): Result<T, null | undefined>; // Get Ok if provided value not null or undefined otherwise Err
+    static from<T>(value: T | null | undefined): Result<T, null | undefined>;
+    static fromNever<T, E>(fn: () => T): Result<T, E>;
+    static fromPromise<T, E>(promise: Promise<T>): Promise<Result<T, E>>;
+    static fromAsync<T, E>(fn: () => Promise<T>): Promise<Result<T, E>>;
     match<A>(arms: ResultArms<T, E, A>): A;
     isErr(): boolean;
     isOk(): boolean;
