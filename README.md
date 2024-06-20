@@ -112,7 +112,7 @@ It might be useful when you need to store null or undefined deliberately
 
 ```ts
 [undefined, null, ...].find(value => value???) 
-// it returns undefined when nothing is found but array includes undefined as actual value?
+// it returns undefined when nothing is found but array includes undefined as actual value
 
 // Another example
 function foo(): void { }
