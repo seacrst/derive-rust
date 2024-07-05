@@ -8,7 +8,7 @@ export default defineConfig({
         "src/index.ts"
       ],
       name: "derive-rust",
-      fileName: (fmt, name) => fmt === "es" ? `${name}.js` : `${name}.umd.${fmt}`
+      formats: ['es']
     },
     outDir: "lib"
   },

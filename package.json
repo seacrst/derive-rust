@@ -1,16 +1,17 @@
 {
   "name": "derive-rust",
-  "version": "0.2.9",
+  "version": "0.2.91",
   "description": "Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
     "watch": "node --watch lib/index.js",
     "check": "esbuild src/index.ts --bundle --outdir=lib --watch",
-    "build": "tsc && vite build",
+    "build": "esbuild src/index.ts --bundle --outdir=lib --format=esm --tsconfig=tsconfig.json --minify --platform=neutral",
     "test": ""
   },
+  "type": "module",
   "types": "./lib/index.d.ts",
-  "main": "./lib/index.umd.cjs",
+  "main": "./lib/index.js",
   "module": "./lib/index.js",
   "files": [
     "./lib/",
@@ -19,7 +20,7 @@
   "exports": {
     ".": {
       "import": "./lib/index.js",
-      "require": "./lib/index.umd.cjs"
+      "require": "./lib/index.js"
     }
   },
   "keywords": [
