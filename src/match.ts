@@ -1,5 +1,6 @@
 import { cmp } from "./cmp";
-import { Sized, ex } from "./core";
+import { Sized } from "./mod";
+import { ex } from "./ex";
 
 export type Extract<V> = V extends Sized<infer T> ? T : V;
 export type MatchArm<V, T> = [...V[], () => T];
@@ -43,13 +44,6 @@ export function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V,
   }
 
   return defaultMatchArm(value, param as Extract<V>);
-}
-
-export function ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr: (v: Extract<V>) => void = () => {}) {
-  const param = value instanceof Object && Object.hasOwn(value, "$ref") ? (value as unknown as Sized<V>).$ref[0] : value;
-  const lhs = p(param as Extract<V>);
-
-  matchExpr(value, lhs, (result) => result === 1) ? ifExpr(param as Extract<V>) : elseExpr(param as Extract<V>);
 }
 
 export function matchExpr<T, R>(lhsValue: T, rhsValue: T, exec: (result: 1 | 0 | -1, lhs: T, rhs: T) => R): R {

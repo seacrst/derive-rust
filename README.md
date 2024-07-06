@@ -111,9 +111,9 @@ cmp(o1, o2) // 1 - means true
 eq(o1, o2) // true. eq() it's just wrapper to cmp(o1, o2) === 1
 
 
-// But their types are different 
+// But their types are different
 
-partialEq(o1, o2) // false. As it's generic wrapper to eqType()
+partialEq(o1, o2) // false. As it's generic wrapper to eqType(o1, o2)
 ```
 
 ## Box\<T>
@@ -440,8 +440,6 @@ class Result<T, E> implements Sized<T | E> {
 
 function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
 
-function ifLet<V>(p: (p: Extract<V>) => V, value: V, ifExpr: (v: Extract<V>) => void, elseExpr?: (v: Extract<V>) => void): void;
-
 interface Sized<T = null> {
     readonly $ref: [T];
 }
@@ -480,5 +478,4 @@ function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function getRef<T>(s: Sized<T>): T;
 function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
 function setRef<T>(self: Sized<T>, value: T): Sized<T>;
-function orderKeys(keys: string[], targetKeys: string[]): string[];
 ```

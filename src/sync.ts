@@ -1,6 +1,7 @@
-import { Self, Sized, isValue } from "./core";
-import { None, Option } from "./option";
+import { Self } from "./mod";
+import { Option } from "./option";
 import { Err, Ok, Result } from "./result";
+import { isValue } from "./ref";
 
 export class SenderError {
     error = "";
@@ -39,7 +40,7 @@ export class SyncSender<T> {
         return Ok({})
     } else {
         return Err(new SenderError(self => {
-            self.error = "No valid value has been sent";
+            self.error = typeof value === "object" ? "Null" : "Undefined";
         }));
     }
   }

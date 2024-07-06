@@ -1,32 +1,35 @@
 {
   "name": "derive-rust",
-  "version": "0.2.92",
+  "version": "0.3.0",
   "description": "Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
-    "watch": "node --watch lib/index.js",
-    "check": "esbuild src/index.ts --bundle --outdir=lib --watch",
-    "build": "esbuild src/index.ts src/cmp.ts src/core.ts src/sync.ts src/result.ts src/match.ts src/option.ts src/range.ts --splitting --outdir=lib --format=esm --minify --platform=neutral && tsc --emitDeclarationOnly --outDir lib",
+    "watch": "node --watch lib/esm/mod.js",
+    "check": "esbuild src/mod.ts --bundle --outdir=lib/esm --watch",
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc --emitDeclarationOnly --outDir lib/esm && esbuild src/**/*.ts --splitting --outdir=lib/esm --format=esm --minify",
+    "build:cjs": "tsc --emitDeclarationOnly --moduleResolution bundler --outDir lib/cjs && esbuild src/**/*.ts --outdir=lib/cjs --format=cjs --minify --platform=node",
     "test": ""
   },
-  "types": "./lib/index.d.ts",
-  "main": "./lib/index.js",
-  "module": "./lib/index.js",
+  "types": "./lib/esm/mod.d.ts",
+  "main": "./lib/cjs/mod.js",
+  "module": "./lib/esm/mod.js",
   "files": [
-    "./lib/",
+    "./lib/esm/",
+    "./lib/cjs/",
     "LICENSE"
   ],
   "exports": {
     ".": {
-      "import": "./lib/index.js",
-      "require": "./lib/index.js"
+      "import": "./lib/esm/mod.js",
+      "require": "./lib/cjs/mod.js"
     }
   },
   "keywords": [
+    "derive",
     "rust",
     "rustjs",
-    "rust-like",
-    "self",
+    "validate",
     "result",
     "option",
     "enum",
@@ -35,10 +38,10 @@
     "pattern",
     "struct",
     "range",
-    "derive",
     "clone",
     "compare",
-    "channels"
+    "channel",
+    "sync"
   ],
   "author": "Seacrest",
   "license": "MIT",
@@ -48,8 +51,6 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "esbuild": "^0.20.2",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.10",
-    "vite-plugin-dts": "^3.8.3"
+    "typescript": "^5.4.5"
   }
 }

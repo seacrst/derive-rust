@@ -1,6 +1,6 @@
-import { Sized, panic } from "./core";
-import { match } from "./match";
+import { Sized } from "./mod";
 import { Err, Ok, Result } from "./result";
+import { panic } from "./panking";
 
 export interface OptionArms<T, A> {
   Some(value: T): A;

@@ -1,4 +1,4 @@
-import { Sized } from "./core";
+import { Sized } from "./mod";
 import { None, Option, Some } from "./option";
 
 export interface ResultArms<T, E, A> {
