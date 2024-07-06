@@ -6,16 +6,20 @@
     "start": "concurrently \"npm run check\" \"npm run watch\"",
     "watch": "node --watch lib/esm/mod.js",
     "check": "esbuild src/mod.ts --bundle --outdir=lib/esm --watch",
-    "build": "npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc --emitDeclarationOnly --outDir lib/esm && esbuild src/**/*.ts --splitting --outdir=lib/esm --format=esm --minify",
-    "build:cjs": "tsc --emitDeclarationOnly --moduleResolution bundler --outDir lib/cjs && esbuild src/**/*.ts --outdir=lib/cjs --format=cjs --minify --platform=node",
-    "test": ""
+    "build": "npm run dts && npm run build:esm && npm run build:cjs",
+    "build:config": "node build-esm.config.mjs && node build-cjs.config.mjs",
+    "dts": "tsc --emitDeclarationOnly --outDir lib/dts",
+    "ts:esm": "tsc --emitDeclarationOnly --outDir lib/esm",
+    "ts:cjs": "tsc --emitDeclarationOnly --moduleResolution bundler --outDir lib/cjs",
+    "build:esm": "esbuild src/**/*.ts --splitting --outdir=lib/esm --format=esm --minify",
+    "build:cjs": "esbuild src/**/*.ts --outdir=lib/cjs --format=cjs --minify --platform=node"
   },
-  "types": "./lib/esm/mod.d.ts",
+  "types": "./lib/dts/mod.d.ts",
   "main": "./lib/cjs/mod.js",
   "module": "./lib/esm/mod.js",
   "files": [
     "./lib/esm/",
+    "./lib/dts/",
     "./lib/cjs/",
     "LICENSE"
   ],
