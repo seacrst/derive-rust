@@ -1,6 +1,6 @@
 {
   "name": "derive-rust",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Rust-like utils for JavaScript. Start using match pattern, enums with generics and other features similarly to the Rust programming language.",
   "scripts": {
     "start": "concurrently \"npm run check\" \"npm run watch\"",
@@ -8,18 +8,17 @@
     "check": "esbuild src/mod.ts --bundle --outdir=lib/esm --watch",
     "build": "npm run dts && npm run build:esm && npm run build:cjs",
     "build:config": "node build-esm.config.mjs && node build-cjs.config.mjs",
-    "dts": "tsc --emitDeclarationOnly --outDir lib/dts",
+    "dts": "npm run ts:esm && npm run ts:cjs",
     "ts:esm": "tsc --emitDeclarationOnly --outDir lib/esm",
     "ts:cjs": "tsc --emitDeclarationOnly --moduleResolution bundler --outDir lib/cjs",
     "build:esm": "esbuild src/**/*.ts --splitting --outdir=lib/esm --format=esm --minify",
     "build:cjs": "esbuild src/**/*.ts --outdir=lib/cjs --format=cjs --minify --platform=node"
   },
-  "types": "./lib/dts/mod.d.ts",
+  "types": "./lib/esm/mod.d.ts",
   "main": "./lib/cjs/mod.js",
   "module": "./lib/esm/mod.js",
   "files": [
     "./lib/esm/",
-    "./lib/dts/",
     "./lib/cjs/",
     "LICENSE"
   ],

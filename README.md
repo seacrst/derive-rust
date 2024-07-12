@@ -396,6 +396,8 @@ class Option<T> implements Sized<T> {
     isSome(): boolean;
     intoResult<E>(error: E): Result<T, E>;
     map<F>(fn: (value: T) => F): Option<F>;
+    filter(predicate: (value: T) => boolean): Option<T>;
+    flatten(): Option<T>;
     okOr<E>(err: E): Result<T, E>;
     okOrElse<E>(fn: () => E): Result<T, E>;
     ifLet<F>(fn: (opt: T) => Option<T>, ifExpr: (value: T) => F, elseExpr?: (value: T) => F): F;
@@ -434,6 +436,7 @@ class Result<T, E> implements Sized<T | E> {
     intoOption(): Option<T>;
     map<F>(fn: (ok: T) => F): Result<F, E>;
     mapErr<F>(fn: (err: E) => F): Result<T, F>;
+    flatten(): Result<T, E>;
     ifLet<F>(fn: (r: T | E) => Result<T, E>, ifExpr: (value: T | E) => F, elseExpr?: (value: T | E) => F): F;
 }
 

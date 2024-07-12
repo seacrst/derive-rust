@@ -120,20 +120,27 @@ export class Result<T, E> implements Sized<T | E> {
     return this.isOk() ? Some(this.self.value as T) : None();
   }
 
-  map<F>(fn: (ok: T) => F): Result<F, E> {
+  map<F>(predicate: (ok: T) => F): Result<F, E> {
     if (this.isOk()) {
-      return Ok(fn(this.self.value as T));
+      return Ok(predicate(this.self.value as T));
     }
 
     return this as unknown as Result<F, E>;
   }
 
-  mapErr<F>(fn: (err: E) => F): Result<T, F> {
+  mapErr<F>(predicate: (err: E) => F): Result<T, F> {
     if (this.isErr()) {
-      return Err(fn(this.self.value as E));
+      return Err(predicate(this.self.value as E));
     }
 
     return this as unknown as Result<T, F>;
+  }
+
+  flatten(): Result<T, E> {
+    return this.match({
+      Ok:(res) => res instanceof Result ? res.isOk() ? res.unwrap() : res.unwrapErr() : this,
+      Err:(res) => res instanceof Result ? res.isErr() ? res.unwrapErr() : res.unwrap() : this
+    });
   }
 
   ifLet<F>(
