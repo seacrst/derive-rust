@@ -20,6 +20,19 @@ c.match({
   Some: (v) => v
 })
 
+// Or use ifLet method
+Some(10).ifLet((n) => Some(n), (n) => {
+  console.log(n / 2)
+})
+
+// as Some is a function itself we can pass its ref
+
+Some(10).ifLet(Some, (num) => {
+  console.log(num / 2);
+}, () => {
+  console.log("None 10"); // you can call optional else expression
+})
+
 // Data validation
 
 const opt = Option.from<number>(undefined);
@@ -70,14 +83,14 @@ console.log(s1) // "bar"
 const s2 = match(Some("bar"), (v) => [
   [Some("baz"), Some("bar"), () => "baz or bar"], // arm with more than one value
   [None<string>(), () => "none"]
-], (_, s) => s);
+], _ => "");
 
 console.log(s2) // "baz or bar"
 
 const s3 = match(Some("bar"), (v) => [
   (bar) => [Some("baz"), Some(bar), () => "baz or " + bar], // patterns are used by wrapping in functions
   [None<string>(), () => "none"]
-], (_, s) => s);
+], _ => "");
 
 console.log(s3) // "baz or bar"
 
@@ -86,7 +99,7 @@ const val = match(9, () => [
   [3, () => Some(3)],
   [0, () => None()],
   (v) => [v, () => Some(v + 1)] // pattern sample with primitives 
-], () => None())
+], _ => None())
 
 console.log(val.unwrap()) // 10
 ```
@@ -108,12 +121,11 @@ const o2 = {
 }
 
 cmp(o1, o2) // 1 - means true
+
 eq(o1, o2) // true. eq() it's just wrapper to cmp(o1, o2) === 1
 
-
 // But their types are different
-
-partialEq(o1, o2) // false. As it's generic wrapper to eqType(o1, o2)
+typeEq(o1, o2) // false
 ```
 
 ## Box\<T>
@@ -151,20 +163,23 @@ boxed.leak() // undefined as value
 
 interface MyEnumArms<T, A> {
   Foo(value: T): A,
-  Bar(value: string): A,
-  Baz(value: string): A,
+  Bar(): A,
+  Baz(): A,
 }
 
-class MyEnum<T = string> implements Sized<T> {
+class MyEnum<T = undefined> {
   static Foo = (value: string) => new MyEnum(self => self.variant.Foo, value);
-  static Bar = () => new MyEnum(self => self.variant.Bar);
-  static Baz = () => new MyEnum(self => self.variant.Baz);
+  static get Bar() {
+    return new MyEnum(self => self.variant.Bar);
+  };
+  static get Baz() {
+    return new MyEnum(self => self.variant.Baz)
+  };
 
-  $ref: [T]; // it is need to use pattern in match function
-  self: {
+  #self: {
     variant: string,
     value: T
-  }; // must be public for cmp() function 
+  }
 
   variant = {
     Foo: (value: string) => value,
@@ -173,125 +188,54 @@ class MyEnum<T = string> implements Sized<T> {
   }
 
   private constructor(impl: (self: MyEnum<T>) => Function, value?: T) {
-    let variant = impl(this);
-
-    this.self = {
+    const variant = impl(this);
+    this.#self = {
       variant: variant.name, 
-      value: variant(value) ?? variant.name as T // use Box<T> if you need to store null or undefined 
+      value: variant(value)
     };
-
-    this.$ref = [this.self.value];
-    Object.freeze(this);
-    Object.freeze(this.self);
-    Object.freeze(this.$ref);
   }
 
-  match<A>(arms: MyEnumArms<T, A>): A {
-    switch (this.self.variant) {
-      case arms.Foo.name: return arms.Foo(this.self.value);
-      case arms.Bar.name: return arms.Bar(arms.Bar.name);
-      default: return arms.Baz(arms.Baz.name);
+  match<A>(arms: MyEnumArms<T,A>): A {
+    switch (this.#self.variant) {
+      case arms.Foo.name: return arms.Foo(this.#self.value);
+      case arms.Bar.name: return arms.Bar();
+      default: return arms.Baz();
     }
   }
 }
 
 const fooMatch = MyEnum.Foo("foo").match({
   Foo: (foo) => `my ${foo} value`,
-  Bar: (bar) => `my ${bar} value`,
-  Baz: (baz) => `my ${baz} value`,
+  Bar: () => "empty",
+  Baz: () => "nothing",
 });
 
 console.log({fooMatch}) // { fooMatch: 'my foo value' }
-
-const bazMatch = MyEnum.Baz().match({
-  Foo: (foo) => `my ${foo} value`,
-  Bar: (bar) => `my ${bar} value`,
-  Baz: (baz) => `my ${baz} value`,
-});
-
-
-console.log({bazMatch}) // { bazMatch: 'my Bazz value' }
-
-match(MyEnum.Foo("hello"), () => [
-  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
-  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar)]
-], (_, hello) => console.log(hello))
-
-// hello world
-// ________________
-
-match(MyEnum.Bar(), () => [
-  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
-  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar.toLowerCase())]
-], (_, hello) => console.log(hello))
-
-// hello bar
-// ________________
-
-match(MyEnum.Baz(), () => [
-  (hello) => [MyEnum.Foo(hello), () => console.log(hello + " world")],
-  (bar) => [MyEnum.Bar(), () => console.log("hello " + bar.toLowerCase())]
-], (_, Baz) => console.log(Baz.toLowerCase()))
-
-// baz
-// ________________
-
-Some(10).ifLet((n) => Some(n), (n) => {
-  console.log(n / 2)
-})
-
-// as Some is a function itself we can pass its ref
-
-Some(10).ifLet(Some, (num) => {
-  console.log(num / 2);
-}, () => {
-  console.log("None 10"); // you can call optional else expression
-})
 
 ```
 
 ## Structs
 
 ```ts
-interface FooStruct {
-  a: string,
-  b: number
-}
-
-class Foo implements FooStruct {
-  a: string;
-  b: number;
-
-  constructor(struct: FooStruct) {
-    implStruct(this, struct); // Call it when you have too many fields have to be assigned. 
-    // Be cautious. this - is the FIRST ARGUMENT
-  }
-}
-
-const foo = new Foo({
-  a: "",
-  b: 10
-});
-
-// Or
-
-type Self<S, T = void> = (self: S) => T;
-
 class Foo {
-  bar: string;
+  #x: number;
+  a: string;
 
-  constructor(impl: (self: Foo) => TypeYouWantOrVoid) { 
-    impl(this);
+  constructor(self: Self<Foo>) {
+    // Assigns all the Self<S> properties except from functions
+    // Seals `this` by default with third argument
+    // Be cautious. `this` - is the FIRST ARGUMENT
+    implStruct(this, self); 
   }
-  // or 
-  constructor(self: Self<Foo>) { 
-    self(this);
-  } // the same
+
+  f() {
+    console.log(this.a)
+  }
 }
 
-const foo = new Foo(self => {
-  self.bar = "hello";
-});
+new Foo({
+  a: "hello" // Self<S> checks only fields
+})
 ```
 
 ## Ranges
@@ -447,7 +391,7 @@ interface Sized<T = null> {
     readonly $ref: [T];
 }
 
-type Self<S, T = void> = (self: S) => T;
+export type Self<S> = { [K in keyof S as S[K] extends Function ? never : K]: S[K] }
 
 class Box<T> implements Sized<T> {
     #private;
@@ -466,17 +410,17 @@ function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T; // structuredClone but with methods
 function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>]; 
 function channel<T>(): [Sender<T>, Receiver<T>];
-function implStruct<S>(target: S, self: S): void;
-function eqType(lhs: any, rhs: any): boolean;
+function implStruct<S>(target: S, self: S, seal: boolean): void;
+function typeEq(lhs: any, rhs: any): boolean;
 function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
-function partialEq<T>(lhs: T, rhs: T): boolean;
 function eq<T>(lhs: T, rhs: T): boolean;
 function panic(reason: string): never;
+
 // expression; the same as (() => {})() 
 function ex<T, V>(fn: (value: V) => T, value?: V): T;
-
 // double expression
 function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
+
 function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
 function getRef<T>(s: Sized<T>): T;
 function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;

@@ -1,4 +1,4 @@
-import { Self } from "./mod";
+import { implStruct, Self } from "./mod";
 import { Option } from "./option";
 import { Err, Ok, Result } from "./result";
 import { isValue } from "./ref";
@@ -6,8 +6,8 @@ import { isValue } from "./ref";
 export class SenderError {
     error = "";
 
-    constructor(impl: (self: SenderError) => void) {
-        impl(this);
+    constructor(self: Self<SenderError>) {
+        implStruct(this, self);
     }
 }
 
@@ -15,7 +15,7 @@ export class ReceiverError {
   error: string;
 
   constructor(self: Self<ReceiverError>) {
-    self(this);
+    implStruct(this, self);
   }
 }
 
@@ -30,8 +30,8 @@ class Propagation<E> {
 export class SyncSender<T> {
   messages: T[] = [];
 
-  constructor(impl: (self: SyncSender<T>) => void) {
-    impl(this);
+  constructor(self: Self<SyncSender<T>>) {
+    implStruct(this, self);
   }
   
   send(value: T): Result<{}, SenderError> {
@@ -39,9 +39,7 @@ export class SyncSender<T> {
         this.messages.unshift(value);
         return Ok({})
     } else {
-        return Err(new SenderError(self => {
-            self.error = typeof value === "object" ? "Null" : "Undefined";
-        }));
+        return Err(new SenderError({error: typeof value === "object" ? "Null" : "Undefined"}));
     }
   }
 }
@@ -49,8 +47,8 @@ export class SyncSender<T> {
 export class SyncReceiver<T> {
   messages: T[] = [];
 
-  constructor(impl: (self: SyncReceiver<T>) => void) {
-    impl(this);
+  constructor(self: Self<SyncReceiver<T>>) {
+    implStruct(this, self);
   }
 
   recv(): Option<T> {
@@ -61,8 +59,8 @@ export class SyncReceiver<T> {
 export function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>] {
   const messages: T[] = [];
   
-  const tx = new SyncSender<T>(self => void (self.messages = messages));
-  const rx = new SyncReceiver<T>(self => void (self.messages = messages));
+  const tx = new SyncSender<T>({messages});
+  const rx = new SyncReceiver<T>({messages});
 
   return [tx, rx];
 }
@@ -71,7 +69,7 @@ export class Sender<T> {
   sender: SyncSender<Promise<T>>;
 
   constructor(self: Self<Sender<T>>) {
-    self(this);
+    implStruct(this, self);
   }
   
   send(task: Promise<T>) {
@@ -84,7 +82,7 @@ export class Receiver<T> {
     receiver: SyncReceiver<Promise<T>>;
 
     constructor(self: Self<Receiver<T>>) {
-      self(this);
+      implStruct(this, self);
     }
 
     recv<E = ReceiverError>(): Promise<Result<T, E>> {
@@ -95,25 +93,20 @@ export class Receiver<T> {
             Ok<T, E>(ok)
           ))
           .catch(err => this.task.then(() => Err<E, T>(err as E))),
-        None:() => Promise.resolve(Err<E, T>(new ReceiverError(self => self.error = "None") as E))
+        None:() => Promise.resolve(Err<E, T>(new ReceiverError({error: "None"}) as E))
       })
     }
 }
 
 export function channel<T>(): [Sender<T>, Receiver<T>] {
     const task: Promise<Result<T, ReceiverError>> = Promise
-      .resolve(Err<ReceiverError, T>(new ReceiverError(self => self.error = "None")));
+      .resolve(Err<ReceiverError, T>(new ReceiverError({error: "None"})));
 
     const [sender, receiver] = syncChannel<Promise<T>>();
     
-    const tx = new Sender<T>(self => {
-        self.sender = sender;
-    });
+    const tx = new Sender<T>({sender});
 
-    const rx = new Receiver<T>(self => {
-        self.task = task;
-        self.receiver = receiver;
-    });
+    const rx = new Receiver<T>({receiver, task});
     
     return [tx, rx];
 }

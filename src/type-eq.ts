@@ -1,8 +1,4 @@
-export function partialEq<T>(lhs: T, rhs: T): boolean {
-  return eqType(lhs, rhs);
-}
-
-export function eqType(lhs: any, rhs: any): boolean {
+export function typeEq(lhs: any, rhs: any): boolean {
 
   if (typeof lhs === "function" && typeof rhs === "function") {
       return true;
@@ -39,7 +35,7 @@ export function eqType(lhs: any, rhs: any): boolean {
       const lhsObjective = lhs.every(lVal => {
               let undefinedGuard = false;
               const found = rhs.find(rVal => {
-                  const eq = eqType(lVal, rVal)
+                  const eq = typeEq(lVal, rVal)
                   undefinedGuard = eq && lVal === undefined || false;
                   return eq; 
               });
@@ -50,7 +46,7 @@ export function eqType(lhs: any, rhs: any): boolean {
       const rhsObjective = rhs.every(rVal => {
               let undefinedGuard = false;
               const found = lhs.find(lVal => {
-                  const eq = eqType(lVal, rVal)
+                  const eq = typeEq(lVal, rVal)
                   undefinedGuard = eq && lVal === undefined || false;
                   return eq; 
               });
@@ -62,7 +58,7 @@ export function eqType(lhs: any, rhs: any): boolean {
   }
 
   if ((lhs instanceof Map && rhs instanceof Map) || (lhs instanceof Set && rhs instanceof Set)) {
-      return eqType(Array.from(lhs), Array.from(rhs));
+      return typeEq(Array.from(lhs), Array.from(rhs));
   }
 
   if ((lhs instanceof Date && rhs instanceof Date) || (lhs instanceof Promise && rhs instanceof Promise)) {
@@ -74,7 +70,7 @@ export function eqType(lhs: any, rhs: any): boolean {
       const rhskeys = Object.keys(rhs);
 
       if (lhskeys.length === rhskeys.length) {
-          return lhskeys.every(key => rhskeys.find(val => val === key) !== undefined) ? eqType(Object.values(lhs), Object.values(rhs)) : false
+          return lhskeys.every(key => rhskeys.find(val => val === key) !== undefined) ? typeEq(Object.values(lhs), Object.values(rhs)) : false
       }
   }
 

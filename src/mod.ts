@@ -8,7 +8,7 @@ export * from "./boxed";
 export * from "./clone";
 export * from "./ex";
 export * from "./panking";
-export * from "./partial-eq";
+export * from "./type-eq";
 export * from "./ref";
 export * from "./impl";
 
@@ -16,4 +16,4 @@ export interface Sized<T = null> {
   readonly $ref: [T];
 }
 
-export type Self<S, T = void> = (self: S) => T;
+export type Self<S> = { [K in keyof S as S[K] extends Function ? never : K]: S[K] }
