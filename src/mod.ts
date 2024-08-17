@@ -1,6 +1,3 @@
-import { eqType } from "./eq-type";
-import { match, matches } from "./match";
-
 export * from "./match";
 export * from "./option";
 export * from "./result";
