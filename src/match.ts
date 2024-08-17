@@ -1,4 +1,5 @@
-type Ref<T, R = T> = (value: T) => R;
+import {isObject} from "./impl";
+
 type Arm<T, A> = [...T[], () => A];
 type ArmFn<T, A> = (ref: T) => Arm<T, A>;
 
@@ -10,9 +11,21 @@ export function match<T, A>(value: T, arms: Array<Arm<T, A> | ArmFn<T, A>> , def
 
     if (Array.isArray(arms[i]) && arms[i].length > 0 && typeof arms[i].at(-1) === "function") {
       const expr = arms[i].pop() as () => A;
+
       const m = arms[i].find(rhs => matches(value, rhs));
       
-      if (m === undefined && value === undefined) {
+      const is = [m, value].every((v) => {
+        switch (v) {
+          case undefined:
+          case null:
+          case 0:
+          case "":
+          case false: return true;
+          default: return false;
+        }
+      });
+
+      if (is && m === value) {
         return expr();
       }
 
@@ -26,20 +39,12 @@ export function match<T, A>(value: T, arms: Array<Arm<T, A> | ArmFn<T, A>> , def
 
 export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
 
-  if (typeof lhs === "function" && typeof rhs === "function" || (lhs instanceof Date && rhs instanceof Date) || (lhs instanceof Promise && rhs instanceof Promise)) {
-      return lhs === rhs && condition;
-  }
-  
-  if (typeof lhs !== "object" && typeof rhs !== "object" && lhs !== null && rhs !== null) {
-      return lhs === rhs && condition;
+  if (lhs === null && rhs === null) {
+    return true && condition;
   }
 
-  if ((typeof lhs === "object" && typeof rhs !== "object") || (typeof lhs !== "object" && typeof rhs === "object")) {
-      return false;
-  }
-
-  if ((Array.isArray(lhs) && !Array.isArray(rhs)) || (!Array.isArray(lhs) && Array.isArray(rhs))) {
-      return false;
+  if (rhs instanceof Function && lhs instanceof Function) {
+      return Object.is(rhs, lhs) && condition;
   }
 
   if (Array.isArray(lhs) && Array.isArray(rhs)) {
@@ -54,6 +59,7 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
       
       const lhsObjective = lhs.every(lVal => {
               let undefinedGuard = false;
+
               const found = rhs.find(rVal => {
                   const is_eq = matches(lVal, rVal, condition);
                   undefinedGuard = is_eq && lVal === undefined;
@@ -68,7 +74,7 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
               let undefinedGuard = false;
               const found = lhs.find(lVal => {
                   const is_eq = matches(lVal, rVal, condition);
-                  undefinedGuard = is_eq && lVal === undefined;
+                  undefinedGuard = is_eq && rVal === undefined;
                   return is_eq; 
               });
 
@@ -82,9 +88,13 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
       return matches(Array.from(lhs), Array.from(rhs), condition);
   }
 
-  if (lhs instanceof Object && rhs instanceof Object) {
-      const lEnt = Object.entries(lhs).filter(([_, v]) => typeof v !== "function");
-      const rEnt = Object.entries(rhs).filter(([_, v]) => typeof v !== "function");
+  if (isObject(rhs) && isObject(lhs)) {
+      const lEnt = Object.entries(lhs!).filter(([_, v]) => typeof v !== "function");
+      const rEnt = Object.entries(rhs!).filter(([_, v]) => typeof v !== "function");
+
+      if (lEnt.length === 0 && rEnt.length === 0) {
+        return true && condition;
+      }
 
       const lhskeys = lEnt.map(([k]) => k);
       const rhskeys = rEnt.map(([k]) => k);
@@ -93,12 +103,17 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
       const rhsvals = rEnt.map(([_, v]) => v);
 
       if (lhskeys.length === rhskeys.length) {
-          return lhskeys.every(key => rhskeys.find(val => val === key) !== undefined) && matches(lhsvals, rhsvals, condition)
+        return lhskeys.every(key => rhskeys.find(val => val === key) !== undefined) && matches(lhsvals, rhsvals, condition)
+      } else {
+        return false;
       }
+  } else {
 
-      return lhs === null && rhs === null && condition;
+    if (!(rhs instanceof Object) && !(lhs instanceof Object)) {
+      return Object.is(rhs, lhs) && condition;
+    }
   }
 
-  console.error("match error");
-  return false;
+  return rhs === lhs && condition;
 }
+

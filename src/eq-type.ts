@@ -101,6 +101,10 @@ export function eqType<T>(lhs: T, rhs: T): boolean {
     const rhskeys = Object.keys(rhs);
 
     if (lhskeys.length === rhskeys.length) {
+      if (lhskeys.length === 0 && 0 === rhskeys.length) {
+        return true;
+      }
+      
       return lhskeys.every(
         (key) => rhskeys.find((val) => val === key) !== undefined,
       )
