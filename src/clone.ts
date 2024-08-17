@@ -8,7 +8,7 @@ export function clone<T>(value: T): T {
     return value;
   }
   
-  if (typeof value !== "function" && !Array.isArray(value) && !(value instanceof Map) && !(value instanceof Set) && !(value instanceof Promise)) {
+  if (typeof value !== "function" && !Array.isArray(value) && !(value instanceof Map) && !(value instanceof Set) && !(value instanceof Date) && !(value instanceof Promise)) {
     return {
       ...Object.fromEntries(Object.entries(value!)
         .filter(([_, val]) => typeof val !== "function")
@@ -36,7 +36,7 @@ export function clone<T>(value: T): T {
     return set as T;
   }
 
-  if (Array.isArray(value)) {
+  if (Array.isArray(value) && value.length > 0) {
     return value.map(v => clone(v)) as T
   }
 

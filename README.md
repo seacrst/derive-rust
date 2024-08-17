@@ -6,7 +6,7 @@ Start using match pattern, enums with generics and other features similarly to t
 
 ```ts
 const a: Option<string> = Some("hello");
-const b: Option<string> = None(); 
+const b: Option<string> = None();
 const c = None<string>();
 
 // match() method for exhausted matching
@@ -73,21 +73,21 @@ Result.fromAsync(async () => await fetch("You should learn Rust"))
 You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
 
 ```ts
-const s1 = match(Some("bar"), (opt) => [ // opt -> Some("bar")
+const s1 = match(Some("bar"), [
   [Some("baz"), () => "some"],
   [None<string>(), () => "none"]
 ], (_, s) => s); // _ -> Some("bar"), s -> "bar"
 
 console.log(s1) // "bar"
 
-const s2 = match(Some("bar"), (v) => [
+const s2 = match(Some("bar"), [
   [Some("baz"), Some("bar"), () => "baz or bar"], // arm with more than one value
   [None<string>(), () => "none"]
 ], _ => "");
 
 console.log(s2) // "baz or bar"
 
-const s3 = match(Some("bar"), (v) => [
+const s3 = match(Some("bar"), [
   (bar) => [Some("baz"), Some(bar), () => "baz or " + bar], // patterns are used by wrapping in functions
   [None<string>(), () => "none"]
 ], _ => "");
@@ -95,20 +95,21 @@ const s3 = match(Some("bar"), (v) => [
 console.log(s3) // "baz or bar"
 
 
-const val = match(9, () => [
+const val = match(9, [
   [3, () => Some(3)],
   [0, () => None()],
-  (v) => [v, () => Some(v + 1)] // pattern sample with primitives 
+  (v) => [v, () => Some(v + 1)] // pattern sample with primitives
 ], _ => None())
 
 console.log(val.unwrap()) // 10
 ```
 
-## Don't compare functions
+## eq & eqType
 
+**eq** returns `1` if values are the same, `-1` if not and  `0` in case types are different or `function` types
 ```ts
-    cmp(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case.
-// So
+    eq(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case.
+// Objects are equal if theirs fields are equal. Methods are excluded.
 
 const o1 = {
     a: 1,
@@ -120,12 +121,23 @@ const o2 = {
     fooFn() {}
 }
 
-cmp(o1, o2) // 1 - means true
+eq(o1, o2) // 1 -> true
+```
 
-eq(o1, o2) // true. eq() it's just wrapper to cmp(o1, o2) === 1
+**eqType** compares types. Returns boolean
+```ts
 
-// But their types are different
-typeEq(o1, o2) // false
+const o1 = {
+    a: 1,
+    barFn() {}
+}
+
+const o2 = {
+    a: 1,
+    fooFn() {}
+}
+
+eqType(o1, o2) // false. Compares all the properties
 ```
 
 ## Box\<T>
@@ -148,10 +160,10 @@ function bar(): Box<undefined> {
   return new Box(undefined); // Implements Sized<T> so you can use it in match with refutable pattern
 }
 
-// or 
+// or
 // box function also added if you don't like new keyword
 function bar(): Box<undefined> {
-  return box(undefined); 
+  return box(undefined);
 }
 
 const boxed = bar();
@@ -190,7 +202,7 @@ class MyEnum<T = undefined> {
   private constructor(impl: (self: MyEnum<T>) => Function, value?: T) {
     const variant = impl(this);
     this.#self = {
-      variant: variant.name, 
+      variant: variant.name,
       value: variant(value)
     };
   }
@@ -222,10 +234,10 @@ class Foo {
   a: string;
 
   constructor(self: Self<Foo>) {
-    // Assigns all the Self<S> properties except from functions
+    // Assigns all the Self<S> properties except methods
     // Seals `this` by default with third argument
     // Be cautious. `this` - is the FIRST ARGUMENT
-    implStruct(this, self); 
+    impl(this, self);
   }
 
   f() {
@@ -291,14 +303,14 @@ range(1, last).forEach(async (current) => {
 
   result.mapErr((err) => current !== 2 ? "Empty" : err).match({
     Ok:(data) => console.log("ok ==> ", data, current),
-    Err:(err) => console.error("err ==> ", err, current) 
+    Err:(err) => console.error("err ==> ", err, current)
   })
 });
 
 rx.recv().then(result => {
   result.mapErr(() => "Completed").match({
     Ok:(data) => console.log(data),
-    Err:(err) => console.error("err ==>", err, last) 
+    Err:(err) => console.error("err ==>", err, last)
   })
 }
 );
@@ -310,6 +322,8 @@ rx.recv().then(result => {
 // ok ==>  { data: [ 'bar' ] } 3
 // err ==>  Empty 4
 // err ==> Completed 5
+
+// Be aware `recv` has to be called in async scope
 ```
 
 ## Declarations
@@ -385,11 +399,7 @@ class Result<T, E> implements Sized<T | E> {
 }
 
 
-function match<V, T>(value: V, matchArms: (value: V) => Array<MatchArm<V, T> | MatchArmFn<V, T>>, defaultMatchArm: (value: V, p: Extract<V>) => T): T;
-
-interface Sized<T = null> {
-    readonly $ref: [T];
-}
+function match<T, A>(value: T, matchArms: Array<MatchArm<T, A> | MatchArmFn<T, A>>, defaultMatchArm: (value: T, p: Extract<T>) => A): A;
 
 export type Self<S> = { [K in keyof S as S[K] extends Function ? never : K]: S[K] }
 
@@ -408,15 +418,14 @@ function rangeCharsInc(start: string, end: string, str: string): string[];
 function rangeCharsRev(start: string, end: string, str: string): string[];
 function rangeCharsRevInc(start: string, end: string, str: string): string[];
 function clone<T>(value: T): T; // structuredClone but with methods
-function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>]; 
+function syncChannel<T>(): [SyncSender<T>, SyncReceiver<T>];
 function channel<T>(): [Sender<T>, Receiver<T>];
-function implStruct<S>(target: S, self: S, seal: boolean): void;
-function typeEq(lhs: any, rhs: any): boolean;
-function cmp<T>(lhs: T, rhs: T): 1 | -1 | 0;
-function eq<T>(lhs: T, rhs: T): boolean;
+function impl<S>(target: S, self: S, seal: boolean): void;
+function eqType<T>(lhs: T, rhs: T): boolean;
+function eq<T>(lhs: T, rhs: T): 1 | -1 | 0;
 function panic(reason: string): never;
 
-// expression; the same as (() => {})() 
+// expression; the same as (() => {})()
 function ex<T, V>(fn: (value: V) => T, value?: V): T;
 // double expression
 function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;

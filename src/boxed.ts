@@ -1,12 +1,9 @@
-import { Sized } from "./mod";
 
-export class Box<T> implements Sized<T> {
-  readonly $ref: [T];
+export class Box<T> {
   #boxed: T;
+  
   constructor(boxed: T) {
-    this.$ref = [boxed];
     this.#boxed = boxed;
-    Object.freeze(this.$ref);
     Object.freeze(this);
   }
 

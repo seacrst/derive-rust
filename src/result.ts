@@ -1,34 +1,31 @@
-import { Sized } from "./mod";
+import { panic } from "./mod";
 import { None, Option, Some } from "./option";
+
+enum ResultVariant {
+  Ok,
+  Err
+}
 
 export interface ResultArms<T, E, A> {
   Err(err: E): A;
   Ok(ok: T): A;
 }
 
-interface ResultSelf<T, E> {
-  value: T | E,
-  variant: string
-};
+export class Result<T, E> {
+  #value: T | E;
+  private variant: ResultVariant;
 
-export class Result<T, E> implements Sized<T | E> {
-  $ref: [T | E];
-  self: ResultSelf<T, E>;
-
-  private constructor(variant: Function, value: T | E) {
-    this.self = {variant: variant.name, value};
-    this.$ref = [value];
-    Object.freeze(this);
-    Object.freeze(this.self);
-    Object.freeze(this.$ref);
+  private constructor(variant: ResultVariant, value: T | E) {
+    this.variant = variant;
+    this.#value = value;
   }
 
   static Err<E, T>(value: E): Result<T, E> {
-    return new Result<T, E>(Err, value);
+    return new Result<T, E>(ResultVariant.Err, value);
   }
 
   static Ok<T, E>(value: T): Result<T, E> {
-    return new Result<T, E>(Ok, value);
+    return new Result<T, E>(ResultVariant.Ok, value);
   }
 
   static from<T>(value: T | null | undefined): Result<T, null | undefined> {
@@ -61,76 +58,100 @@ export class Result<T, E> implements Sized<T | E> {
   }
 
   match<A>(arms: ResultArms<T, E, A>): A {
-    switch (this.self.variant) {
-      case arms.Ok.name: {
-        return arms.Ok(this.self.value as T)
-      };
-
-      default: {
-        return arms.Err(this.self.value as E);
-      };
-    }
+    return this.isOk() ? arms.Ok(this.#value as T) : arms.Err(this.#value as E);
   }
 
   isErr(): boolean {
-    return this.self.variant === Err.name;
+    return this.variant === ResultVariant.Err;
+  }
+
+  isErrAnd(f: (value: E) => boolean): boolean {
+    return this.isErr() && f(this.#value as E);
   }
 
   isOk(): boolean {
-    return this.self.variant === Ok.name;
+    return this.variant === ResultVariant.Ok;
+  }
+
+  isOkAnd(f: (value: T) => boolean): boolean {
+    return this.isOk() && f(this.#value as T);
   }
 
   ok(): Option<T> {
-    return this.isOk() ? Some(this.self.value as T) : None();
+    return this.isOk() ? Some(this.#value as T) : None();
   }
 
   err(): Option<E> {
-    return this.isErr() ? Some(this.self.value as E) : None();
+    return this.isErr() ? Some(this.#value as E) : None();
   }
 
   unwrap(): T {
     if (this.isErr()) {
-      throw new Error(Err.name);
+      panic("Err")
     }
 
-    return this.self.value as T;
+    return this.#value as T;
   }
 
   unwrapOr(value: T): T {
-    return this.isErr() ? (this.self.value as T) : value;
+    return this.isErr() ? this.#value as T : value;
+  }
+
+  unwrapOrElse(f: (err: E) => T): T {
+    return this.match({
+      Ok: (value) => value,
+      Err: (error) =>  f(error)
+    });
   }
 
   unwrapErr(): E {
     if (this.isOk()) {
-      throw new Error(Ok.name);
+      panic("Ok")
     }
 
-    return this.self.value as E;
+    return this.#value as E;
   }
 
   expect(message: string): T {
     if (this.isErr()) {
-      throw new Error(message);
+      panic(message)
     }
 
-    return this.self.value as T;
+    return this.#value as T;
+  }
+
+  intoOk(): T {
+    return this.#value as T;
+  }
+
+
+  intoErr(): E {
+    return this.#value as E;
   }
 
   intoOption(): Option<T> {
-    return this.isOk() ? Some(this.self.value as T) : None();
+    return this.isOk() ? Some(this.#value as T) : None();
   }
 
   map<F>(predicate: (ok: T) => F): Result<F, E> {
     if (this.isOk()) {
-      return Ok(predicate(this.self.value as T));
+      return Ok(predicate(this.#value as T));
     }
 
     return this as unknown as Result<F, E>;
   }
 
+  mapOr<V>(value: V, f: (ok: T) => V): V {
+    return this.isOk() ? f(this.#value as T): value;
+  }
+
+  mapOrElse<F, V>(defaultF: (err: E) => V, f: (ok: T) => V): V {
+    return this.isOk() ? f(this.#value as T) : defaultF(this.#value as E);
+  } 
+
   mapErr<F>(predicate: (err: E) => F): Result<T, F> {
     if (this.isErr()) {
-      return Err(predicate(this.self.value as E));
+      return Err(predicate(this.#value as E));
     }
 
     return this as unknown as Result<T, F>;
@@ -143,15 +164,57 @@ export class Result<T, E> implements Sized<T | E> {
     });
   }
 
-  ifLet<F>(
-    fn: (r: T | E) => Result<T, E>, 
-    ifExpr: (value: T | E) => F, 
-    elseExpr?: (value: T | E) => F
-  ): F {
-    const result = fn(this.self.value);
-    return this.self.variant === result.self.variant ? 
-    ifExpr(result.self.value) : 
-    elseExpr?.(result.self.value) as F;
+  transpose(): Option<Result<T, E>> {
+    if (this.isOk() && this.#value instanceof Option) {
+      return this.#value.isNone() ? None() : Some(Ok(this.#value.unwrap()));
+    } else {
+      return this.isErr() && this.#value instanceof Option && this.#value.isSome() ? Some(Err(this.#value.unwrap())) : None();
+    }
+  }
+
+  inspect(f: (ok: T) => any): Result<T, E> {
+    if (this.isOk()) {
+      f(this.#value as T);
+    }
+    return this;
+  }
+
+  inspectErr(f: (err: E) => any): Result<T, E> {
+    if (this.isErr()) {
+      f(this.#value as E);
+    }
+    return this;
+  }
+
+  and<U>(res: Result<U, E>): Result<U, E> {
+    switch (true) {
+      case this.isOk() && res.isOk(): return res;
+      case this.isErr() && res.isErr(): return this as unknown as Result<U, E>;
+      case this.isOk() && res.isErr(): return res;
+      case this.isErr() && res.isOk(): return this as unknown as Result<U, E>;
+      default: return this as unknown as Result<U, E>
+    }
+  }
+
+  andThen<U>(f: (ok: T) => Result<U, E>): Result<U, E> {
+    return this.isOk() ? f(this.#value as T) : this as unknown as Result<U, E>;
+  }
+
+  or<F>(res: Result<T, F>): Result<T, F> {
+    return this.isOk() ? this as unknown as Result<T, F> : res;
+  }
+
+  orElse<F>(f: (err: E) => Result<T, F> ): Result<T, F> {
+    return this.isOk() ? this as unknown as Result<T, F> : f(this.#value as E);
+  }
+
+  *[Symbol.iterator]() {
+    yield this.#value;
+    return;
+  }
+
+  iter() {
+    return Array.from(this);
   }
 }
 

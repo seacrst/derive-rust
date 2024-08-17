@@ -1,13 +1,16 @@
-import { implStruct, Self } from "./mod";
+import { impl, Self } from "./mod";
 import { Option } from "./option";
 import { Err, Ok, Result } from "./result";
-import { isValue } from "./ref";
+
+function isValue(value: any): boolean {
+  return !(value === null || value === undefined);
+}
 
 export class SenderError {
     error = "";
 
     constructor(self: Self<SenderError>) {
-        implStruct(this, self);
+        impl(this, self);
     }
 }
 
@@ -15,7 +18,7 @@ export class ReceiverError {
   error: string;
 
   constructor(self: Self<ReceiverError>) {
-    implStruct(this, self);
+    impl(this, self);
   }
 }
 
@@ -31,7 +34,7 @@ export class SyncSender<T> {
   messages: T[] = [];
 
   constructor(self: Self<SyncSender<T>>) {
-    implStruct(this, self);
+    impl(this, self);
   }
   
   send(value: T): Result<{}, SenderError> {
@@ -48,7 +51,7 @@ export class SyncReceiver<T> {
   messages: T[] = [];
 
   constructor(self: Self<SyncReceiver<T>>) {
-    implStruct(this, self);
+    impl(this, self);
   }
 
   recv(): Option<T> {
@@ -69,7 +72,7 @@ export class Sender<T> {
   sender: SyncSender<Promise<T>>;
 
   constructor(self: Self<Sender<T>>) {
-    implStruct(this, self);
+    impl(this, self);
   }
   
   send(task: Promise<T>) {
@@ -82,7 +85,7 @@ export class Receiver<T> {
     receiver: SyncReceiver<Promise<T>>;
 
     constructor(self: Self<Receiver<T>>) {
-      implStruct(this, self);
+      impl(this, self);
     }
 
     recv<E = ReceiverError>(): Promise<Result<T, E>> {
