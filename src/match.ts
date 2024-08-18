@@ -9,10 +9,10 @@ export function match<T, A>(value: T, arms: Array<Arm<T, A> | ArmFn<T, A>> , def
       arms[i] = arm(value);
     }
 
-    if (Array.isArray(arms[i]) && arms[i].length > 0 && typeof arms[i].at(-1) === "function") {
-      const expr = arms[i].pop() as () => A;
+    if (Array.isArray(arms[i]) && (arms[i] as Arm<T, A>).length > 0 && typeof (arms[i] as Arm<T, A>).at(-1) === "function") {
+      const expr = (arms[i] as Arm<T, A>).pop() as () => A;
 
-      const m = arms[i].find(rhs => matches(value, rhs));
+      const m = (arms[i] as Arm<T, A>).find(rhs => matches(value, rhs));
       
       const is = [m, value].every((v) => {
         switch (v) {
@@ -25,7 +25,7 @@ export function match<T, A>(value: T, arms: Array<Arm<T, A> | ArmFn<T, A>> , def
         }
       });
 
-      if (is && m === value) {
+      if (is) {
         return expr();
       }
 

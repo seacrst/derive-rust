@@ -5,11 +5,10 @@ Start using match pattern, enums with generics and other features similarly to t
 ## Option\<T>
 
 ```ts
-const a: Option<string> = Some("hello");
+const a = Some("hello");
 const b: Option<string> = None();
 const c = None<string>();
 
-// match() method for exhausted matching
 a.match({
   None: () => "",
   Some: (v) => v + " world!"
@@ -18,19 +17,6 @@ a.match({
 c.match({
   None: () => "",
   Some: (v) => v
-})
-
-// Or use ifLet method
-Some(10).ifLet((n) => Some(n), (n) => {
-  console.log(n / 2)
-})
-
-// as Some is a function itself we can pass its ref
-
-Some(10).ifLet(Some, (num) => {
-  console.log(num / 2);
-}, () => {
-  console.log("None 10"); // you can call optional else expression
 })
 
 // Data validation
@@ -70,60 +56,18 @@ Result.fromAsync(async () => await fetch("You should learn Rust"))
 
 ```
 ## Match
-You can use **match** function with primitive and object data. Primitive and Objects implemented by **Sized\<T>** can be used for "refutable" pattern
 
 ```ts
-const s1 = match(Some("bar"), [
-  [Some("baz"), () => "some"],
-  [None<string>(), () => "none"]
-], (_, s) => s); // _ -> Some("bar"), s -> "bar"
-
-console.log(s1) // "bar"
-
-const s2 = match(Some("bar"), [
-  [Some("baz"), Some("bar"), () => "baz or bar"], // arm with more than one value
-  [None<string>(), () => "none"]
-], _ => "");
-
-console.log(s2) // "baz or bar"
-
-const s3 = match(Some("bar"), [
-  (bar) => [Some("baz"), Some(bar), () => "baz or " + bar], // patterns are used by wrapping in functions
-  [None<string>(), () => "none"]
-], _ => "");
-
-console.log(s3) // "baz or bar"
-
-
-const val = match(9, [
-  [3, () => Some(3)],
-  [0, () => None()],
-  (v) => [v, () => Some(v + 1)] // pattern sample with primitives
-], _ => None())
-
-console.log(val.unwrap()) // 10
+match("hello", [
+  (hello) => [hello, () => hello + " world" ], // wrap arm in function for matching with `ref` value
+  ["foo", "bar", () =>  /* anything */] // list many things for matching
+], _ => "" ) // default expression
 ```
-
-## eq & eqType
-
-**eq** returns `1` if values are the same, `-1` if not and  `0` in case types are different or `function` types
+**matches**
+compare values. Returns boolean
 ```ts
-    eq(() => {}, () => {}) // 0. Zero means ignoring truthy/falsy case.
-// Objects are equal if theirs fields are equal. Methods are excluded.
-
-const o1 = {
-    a: 1,
-    barFn() {}
-}
-
-const o2 = {
-    a: 1,
-    fooFn() {}
-}
-
-eq(o1, o2) // 1 -> true
+matches(lhs, rhs, optCondition)
 ```
-
 **eqType** compares types. Returns boolean
 ```ts
 
@@ -157,73 +101,17 @@ function bar(): void {
 // They are the same but what if...
 
 function bar(): Box<undefined> {
-  return new Box(undefined); // Implements Sized<T> so you can use it in match with refutable pattern
+  return new Box(undefined);
 }
 
 // or
-// box function also added if you don't like new keyword
+// box function also added if you don't like `new` keyword
 function bar(): Box<undefined> {
   return box(undefined);
 }
 
 const boxed = bar();
 boxed.leak() // undefined as value
-```
-
-## Enums
-```ts
-
-interface MyEnumArms<T, A> {
-  Foo(value: T): A,
-  Bar(): A,
-  Baz(): A,
-}
-
-class MyEnum<T = undefined> {
-  static Foo = (value: string) => new MyEnum(self => self.variant.Foo, value);
-  static get Bar() {
-    return new MyEnum(self => self.variant.Bar);
-  };
-  static get Baz() {
-    return new MyEnum(self => self.variant.Baz)
-  };
-
-  #self: {
-    variant: string,
-    value: T
-  }
-
-  variant = {
-    Foo: (value: string) => value,
-    Bar: () => {},
-    Baz: () => {},
-  }
-
-  private constructor(impl: (self: MyEnum<T>) => Function, value?: T) {
-    const variant = impl(this);
-    this.#self = {
-      variant: variant.name,
-      value: variant(value)
-    };
-  }
-
-  match<A>(arms: MyEnumArms<T,A>): A {
-    switch (this.#self.variant) {
-      case arms.Foo.name: return arms.Foo(this.#self.value);
-      case arms.Bar.name: return arms.Bar();
-      default: return arms.Baz();
-    }
-  }
-}
-
-const fooMatch = MyEnum.Foo("foo").match({
-  Foo: (foo) => `my ${foo} value`,
-  Bar: () => "empty",
-  Baz: () => "nothing",
-});
-
-console.log({fooMatch}) // { fooMatch: 'my foo value' }
-
 ```
 
 ## Structs
@@ -329,52 +217,55 @@ rx.recv().then(result => {
 ## Declarations
 
 ```ts
-interface OptionArms<T, A> {
-    Some(value: T): A;
-    None(): A;
-}
+function match<T, A>(value: T, arms: Array<Arm<T, A> | ArmFn<T, A>>, defaultArm: (value: T) => A): A;
+function matches<T>(lhs: T, rhs: T, condition?: boolean): boolean;
 
-interface OptionSelf<T> {
-    variant: string;
-    value: T;
-}
+type Self<S> = { [K in keyof S as S[K] extends Function ? never : K]: S[K] }
 
-class Option<T> implements Sized<T> {
-    $ref: [T];
-    self: OptionSelf<T>;
+class Option<T> {
+    #private;
     private constructor();
     static None<T>(): Option<T>;
     static Some<T>(value: T): Option<T>;
-    static from<T>(value: T | null | undefined): Option<T>; // Get Some if provided value not null or undefined otherwise None
-    match<A>(arms: OptionArms<T, A>): A;
-    unwrap(): T; // Panics if None
+    static from<T>(value: T | null | undefined): Option<T>;
+    match<A>(option: OptionArms<T, A>): A;
+    unwrap(): T;
     unwrapOr(value: T): T;
-    expect(message: string): T; // Panics if None
+    unwrapOrElse(f: () => T): T;
+    expect(message: string): T;
+    inspect(f: (value: T) => any): Option<T>;
+    insert(value: T): T;
+    getOrInsert(value: T): T;
+    getOrInsertWith(f: () => T): T;
     isNone(): boolean;
     isSome(): boolean;
+    isSomeAnd(f: (value: T) => boolean): boolean;
     intoResult<E>(error: E): Result<T, E>;
     map<F>(predicate: (value: T) => F): Option<F>;
+    mapOr<V>(value: V, f: (value: T) => V): V;
+    mapOrElse<V>(defaultF: () => V, f: (value: T) => V): V;
     filter(predicate: (value: T) => boolean): Option<T>;
     flatten(): Option<T>;
+    take(): Option<T>;
+    takeIf(predicate: (value: T) => boolean): Option<T>;
+    replace(value: T): Option<T>;
+    zip<U>(other: Option<U>): Option<[T, U]>;
+    zipWith<O, R>(other: Option<O>, f: (self: T, other: O) => R): Option<R>;
+    unzip<U>(): [Option<T>, Option<U>];
+    transpose<E>(): Result<Option<T>, E>;
     okOr<E>(err: E): Result<T, E>;
-    okOrElse<E>(fn: () => E): Result<T, E>;
-    ifLet<F>(fn: (opt: T) => Option<T>, ifExpr: (value: T) => F, elseExpr?: (value: T) => F): F;
+    okOrElse<E>(err: () => E): Result<T, E>;
+    and<U>(option: Option<U>): Option<U>;
+    andThen<U>(f: (value: T) => Option<U>): Option<U>;
+    or(option: Option<T>): Option<T>;
+    orElse(f: () => Option<T>): Option<T>;
+    xor(option: Option<T>): Option<T>;
+    [Symbol.iterator](): Generator<T | undefined, void, unknown>;
+    iter(): (T | undefined)[];
 }
 
-
-interface ResultArms<T, E, A> {
-    Err(err: E): A;
-    Ok(ok: T): A;
-}
-
-interface ResultSelf<T, E> {
-    value: T | E;
-    variant: string;
-}
-
-class Result<T, E> implements Sized<T | E> {
-    $ref: [T | E];
-    self: ResultSelf<T, E>;
+class Result<T, E> {
+    #private;
     private constructor();
     static Err<E, T>(value: E): Result<T, E>;
     static Ok<T, E>(value: T): Result<T, E>;
@@ -384,28 +275,37 @@ class Result<T, E> implements Sized<T | E> {
     static fromAsync<T, E>(fn: () => Promise<T>): Promise<Result<T, E>>;
     match<A>(arms: ResultArms<T, E, A>): A;
     isErr(): boolean;
+    isErrAnd(f: (value: E) => boolean): boolean;
     isOk(): boolean;
+    isOkAnd(f: (value: T) => boolean): boolean;
     ok(): Option<T>;
     err(): Option<E>;
-    unwrap(): T; // Panics if Err
+    unwrap(): T;
     unwrapOr(value: T): T;
-    unwrapErr(): E; // Panics if Ok
-    expect(message: string): T; // Panics if Err
+    unwrapOrElse(f: (err: E) => T): T;
+    unwrapErr(): E;
+    expect(message: string): T;
+    intoOk(): T;
+    intoErr(): E;
     intoOption(): Option<T>;
     map<F>(predicate: (ok: T) => F): Result<F, E>;
+    mapOr<V>(value: V, f: (ok: T) => V): V;
+    mapOrElse<F, V>(defaultF: (err: E) => V, f: (ok: T) => V): V;
     mapErr<F>(predicate: (err: E) => F): Result<T, F>;
     flatten(): Result<T, E>;
-    ifLet<F>(fn: (r: T | E) => Result<T, E>, ifExpr: (value: T | E) => F, elseExpr?: (value: T | E) => F): F;
+    transpose(): Option<Result<T, E>>;
+    inspect(f: (ok: T) => any): Result<T, E>;
+    inspectErr(f: (err: E) => any): Result<T, E>;
+    and<U>(res: Result<U, E>): Result<U, E>;
+    andThen<U>(f: (ok: T) => Result<U, E>): Result<U, E>;
+    or<F>(res: Result<T, F>): Result<T, F>;
+    orElse<F>(f: (err: E) => Result<T, F>): Result<T, F>;
+    [Symbol.iterator](): Generator<T | E, void, unknown>;
+    iter(): (T | E)[];
 }
-
-
-function match<T, A>(value: T, matchArms: Array<MatchArm<T, A> | MatchArmFn<T, A>>, defaultMatchArm: (value: T, p: Extract<T>) => A): A;
-
-export type Self<S> = { [K in keyof S as S[K] extends Function ? never : K]: S[K] }
 
 class Box<T> implements Sized<T> {
     #private;
-    readonly $ref: [T];
     constructor(boxed: T);
     leak(): T;
 }
@@ -424,14 +324,4 @@ function impl<S>(target: S, self: S, seal: boolean): void;
 function eqType<T>(lhs: T, rhs: T): boolean;
 function eq<T>(lhs: T, rhs: T): 1 | -1 | 0;
 function panic(reason: string): never;
-
-// expression; the same as (() => {})()
-function ex<T, V>(fn: (value: V) => T, value?: V): T;
-// double expression
-function dex<I, O, V>(input: (value: V) => I, output: (value: ReturnType<typeof input>) => O, value?: V): O;
-
-function ref<T, R>(self: Sized<R>, fn: (r: R) => T): T;
-function getRef<T>(s: Sized<T>): T;
-function setNoncallableRef<T>(self: Sized<T>, value: T): Sized<T>;
-function setRef<T>(self: Sized<T>, value: T): Sized<T>;
 ```

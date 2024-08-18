@@ -13,10 +13,10 @@ export interface ResultArms<T, E, A> {
 
 export class Result<T, E> {
   #value: T | E;
-  private variant: ResultVariant;
+  #variant: ResultVariant;
 
   private constructor(variant: ResultVariant, value: T | E) {
-    this.variant = variant;
+    this.#variant = variant;
     this.#value = value;
   }
 
@@ -62,7 +62,7 @@ export class Result<T, E> {
   }
 
   isErr(): boolean {
-    return this.variant === ResultVariant.Err;
+    return this.#variant === ResultVariant.Err;
   }
 
   isErrAnd(f: (value: E) => boolean): boolean {
@@ -70,7 +70,7 @@ export class Result<T, E> {
   }
 
   isOk(): boolean {
-    return this.variant === ResultVariant.Ok;
+    return this.#variant === ResultVariant.Ok;
   }
 
   isOkAnd(f: (value: T) => boolean): boolean {

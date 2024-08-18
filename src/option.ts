@@ -13,10 +13,10 @@ export interface OptionArms<T, A> {
 
 export class Option<T> {
   #value: T;
-  private variant: OptionVariant;
+  #variant: OptionVariant;
 
   private constructor(variant: OptionVariant, value: T) {
-    this.variant = variant;
+    this.#variant = variant;
     this.#value = value;
   }
 
@@ -64,7 +64,7 @@ export class Option<T> {
     this.#value = value;
 
     if (this.isNone()) {
-      this.variant = OptionVariant.Some;
+      this.#variant = OptionVariant.Some;
     }
 
     return value;
@@ -73,7 +73,7 @@ export class Option<T> {
   getOrInsert(value: T): T {
     if (this.isNone()) {
       this.#value = value;
-      this.variant = OptionVariant.Some;
+      this.#variant = OptionVariant.Some;
     }
 
     return value;
@@ -82,18 +82,18 @@ export class Option<T> {
   getOrInsertWith(f: () => T): T {
     if (this.isNone()) {
       this.#value = f();
-      this.variant = OptionVariant.Some;
+      this.#variant = OptionVariant.Some;
     }
 
     return f();
   }
   
   isNone(): boolean {
-    return this.variant === OptionVariant.None;
+    return this.#variant === OptionVariant.None;
   }
   
   isSome(): boolean {
-    return this.variant === OptionVariant.Some;
+    return this.#variant === OptionVariant.Some;
   }
 
   isSomeAnd(f: (value: T) => boolean): boolean {
@@ -142,7 +142,7 @@ export class Option<T> {
   take(): Option<T> {
     if (this.isSome()) {
       const opt = Some(this.#value);
-      this.variant = OptionVariant.None;
+      this.#variant = OptionVariant.None;
       this.#value = undefined as T;
 
       return opt;
@@ -154,7 +154,7 @@ export class Option<T> {
   takeIf(predicate: (value: T) => boolean): Option<T> {
     if (this.isSome() && predicate(this.#value)) {
       const opt = Some(this.#value);
-      this.variant = OptionVariant.None;
+      this.#variant = OptionVariant.None;
       this.#value = undefined as T;
 
       return opt;
@@ -168,7 +168,7 @@ export class Option<T> {
       this.#value = value;
       return Some(value);
     }
-    this.variant = OptionVariant.Some;
+    this.#variant = OptionVariant.Some;
     this.#value = value;
     return None();
   }
