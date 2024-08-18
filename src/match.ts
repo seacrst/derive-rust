@@ -57,7 +57,7 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
           return false;
       }
       
-      const lhsObjective = lhs.every(lVal => {
+      const lhsObjective = lhs.filter(v => typeof v !== "function").every(lVal => {
               let undefinedGuard = false;
 
               const found = rhs.find(rVal => {
@@ -70,7 +70,7 @@ export function matches<T>(lhs: T, rhs: T, condition: boolean = true): boolean{
           });
       
      
-      const rhsObjective = rhs.every(rVal => {
+      const rhsObjective = rhs.filter(v => typeof v !== "function").every(rVal => {
               let undefinedGuard = false;
               const found = lhs.find(lVal => {
                   const is_eq = matches(lVal, rVal, condition);
